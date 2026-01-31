@@ -3,38 +3,27 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { useAuth } from '@/hooks/useAuth'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/Card'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Modal } from '@/components/ui/Modal'
-import { Input } from '@/components/ui/Input'
-import { formatCurrency } from '@/lib/utils'
-import { 
-  Users, 
-  DollarSign, 
-  TrendingUp, 
-  Settings, 
-  Plus, 
-  ArrowLeft,
-  UserPlus,
-  Trash2
-} from 'lucide-react'
+import { formatCurrency, formatDate } from '@/lib/utils'
+import { ArrowLeft, Users, DollarSign, Calendar, Plus, Settings, TrendingUp, FileText } from 'lucide-react'
+import { LoanRequestForm } from '@/components/loans/LoanRequestForm'
+
+type Tab = 'overview' | 'members' | 'loans' | 'contributions' | 'year-end'
 
 export default function GroupDetailPage() {
+  const { user } = useAuth()
   const router = useRouter()
   const params = useParams()
   const groupId = params.id as string
   
-  const [group, setGroup] = useState<any>(null)
-  const [funds, setFunds] = useState<any[]>([])
-  const [members, setMembers] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<Tab>('overview')
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'funds' | 'members'>('overview')
-  const [showInviteModal, setShowInviteModal] = useState(false)
-  const [showFundModal, setShowFundModal] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [fundForm, setFundForm] = useState({ name: '', memberName: '', amount: '' })
+  const [group, setGroup] = useState<any>(null)
+  const [showLoanModal, setShowLoanModal] = useState(false)
 
   useEffect(() => {
     fetchGroupData()
@@ -42,12 +31,12 @@ export default function GroupDetailPage() {
 
   const fetchGroupData = async () => {
     try {
+      setLoading(true)
       const response = await fetch(`/api/groups/${groupId}`)
-      if (!response.ok) throw new Error('Failed to fetch group')
-      const data = await response.json()
-      setGroup(data.group)
-      setFunds(data.funds || [])
-      setMembers(data.members || [])
+      if (response.ok) {
+        const data = await response.json()
+        setGroup(data.group)
+      }
     } catch (error) {
       console.error('Error fetching group:', error)
     } finally {
@@ -55,358 +44,279 @@ export default function GroupDetailPage() {
     }
   }
 
-  const handleInvite = async () => {
-    try {
-      const response = await fetch(`/api/groups/${groupId}/invite`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail }),
-      })
-      
-      if (response.ok) {
-        setInviteEmail('')
-        setShowInviteModal(false)
-        fetchGroupData()
-      }
-    } catch (error) {
-      console.error('Error inviting member:', error)
-    }
-  }
-
-  const handleCreateFund = async () => {
-    try {
-      const response = await fetch(`/api/groups/${groupId}/funds`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: fundForm.name,
-          memberName: fundForm.memberName,
-          amount: parseFloat(fundForm.amount),
-        }),
-      })
-      
-      if (response.ok) {
-        setFundForm({ name: '', memberName: '', amount: '' })
-        setShowFundModal(false)
-        fetchGroupData()
-      }
-    } catch (error) {
-      console.error('Error creating fund:', error)
-    }
-  }
-
   if (loading) {
     return (
-      <DashboardLayout title="Group Details">
+      <DashboardLayout title={group?.name || 'Group Details'}>
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sage"></div>
         </div>
       </DashboardLayout>
     )
   }
 
-  if (!group) {
-    return (
-      <DashboardLayout title="Group Not Found">
-        <Card className="text-center py-12">
-          <CardContent>
-            <p className="text-charcoal-secondary">Group not found or you don't have access.</p>
-            <Button className="mt-4" onClick={() => router.push('/dashboard')}>
-              Back to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
-      </DashboardLayout>
-    )
-  }
-
-  const totalBalance = funds.reduce((sum, fund) => sum + (fund.amount || 0), 0)
+  const isAdmin = group?.ownerId === user?.uid
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'members', label: 'Members' },
+    { id: 'loans', label: 'Loans' },
+    { id: 'contributions', label: 'Contributions' },
+    ...(isAdmin ? [{ id: 'year-end', label: 'Year-End' }] : []),
+  ]
 
   return (
-    <DashboardLayout title={group.name}>
+    <DashboardLayout title={group?.name || 'Group Details'}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Back Button & Header */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Back Button */}
+        <div className="mb-6">
           <Button variant="ghost" onClick={() => router.push('/dashboard')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            Back to Dashboard
           </Button>
-          <div className="flex items-center gap-2">
-            <Badge variant={group.isAdmin ? 'default' : 'outline'}>
-              {group.isAdmin ? 'Admin' : 'Member'}
-            </Badge>
-            <Button variant="ghost" size="sm">
-              <Settings className="w-4 h-4" />
-            </Button>
-          </div>
         </div>
 
         {/* Group Info Card */}
         <Card className="mb-8">
-          <CardContent className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <h1 className="font-display text-3xl text-charcoal mb-2">{group.name}</h1>
-              <p className="text-charcoal-secondary">{group.description || 'No description'}</p>
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="flex-1">
+                <h1 className="font-display text-3xl text-charcoal mb-2">{group?.name || 'Loading...'}</h1>
+                <p className="text-charcoal-secondary line-clamp-2">
+                  {group?.description || 'No description'}
+                </p>
+              </div>
+
+              <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
+                <Button variant="outline" size="sm">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </Button>
+                {isAdmin && (
+                  <Badge variant="default">
+                    Admin
+                  </Badge>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-6">
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-black/[0.06]">
               <div className="text-center">
-                <p className="text-sm text-charcoal-muted">Interest Rate</p>
-                <p className="font-display text-2xl text-sage">{group.interestRate}%</p>
+                <p className="text-sm text-charcoal-muted mb-1">Interest Rate (Members)</p>
+                <p className="font-display text-xl text-charcoal">{group?.loanInterestRateMember || 5}%</p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-charcoal-muted">Total Balance</p>
-                <p className="font-display text-2xl text-charcoal">{formatCurrency(totalBalance)}</p>
+                <p className="text-sm text-charcoal-muted mb-1">Interest Rate (Non-Members)</p>
+                <p className="font-display text-xl text-charcoal">{group?.loanInterestRateNonMember || 10}%</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-charcoal-muted mb-1">Loan Term</p>
+                <p className="font-display text-xl text-charcoal">{group?.termDuration || 2} months</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-charcoal-muted mb-1">Year-End</p>
+                <p className="font-mono text-lg text-charcoal">
+                  {group?.settings?.yearEndDate 
+                    ? formatDate(new Date(group.settings.yearEndDate))
+                    : 'Not set'
+                  }
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-black/[0.06]">
-          {(['overview', 'funds', 'members'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3 font-medium capitalize transition-colors ${
-                activeTab === tab 
-                  ? 'text-sage border-b-2 border-sage' 
-                  : 'text-charcoal-muted hover:text-charcoal'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-sage-dim rounded-lg flex items-center justify-center">
-                      <DollarSign className="w-5 h-5 text-sage" />
-                    </div>
-                    <CardTitle className="text-xl">Active Funds</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="font-display text-4xl text-charcoal mb-2">{funds.length}</p>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setActiveTab('funds')}
-                  >
-                    View All Funds
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-terracotta-dim rounded-lg flex items-center justify-center">
-                      <Users className="w-5 h-5 text-terracotta" />
-                    </div>
-                    <CardTitle className="text-xl">Group Members</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="font-display text-4xl text-charcoal mb-2">{members.length}</p>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setActiveTab('members')}
-                  >
-                    Manage Members
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {/* Tab Navigation */}
+          <div className="flex overflow-x-auto border-b border-black/[0.06]">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as Tab)}
+                className={`px-6 py-4 text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  activeTab === tab.id 
+                    ? 'text-sage border-b-2 border-sage' 
+                    : 'text-charcoal-muted border-b-2 border-transparent hover:border-black/[0.06]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-        )}
 
-        {activeTab === 'funds' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="font-display text-2xl text-charcoal">Funds</h2>
-              {group.isAdmin && (
-                <Button onClick={() => setShowFundModal(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Fund
-                </Button>
-              )}
-            </div>
-
-            {funds.length === 0 ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <div className="w-16 h-16 bg-sage-dim rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <DollarSign className="w-8 h-8 text-sage" />
-                  </div>
-                  <h3 className="font-display text-xl text-charcoal mb-2">No funds yet</h3>
-                  <p className="text-charcoal-secondary mb-4">
-                    Create your first fund to start tracking payments and interest.
-                  </p>
-                  {group.isAdmin && (
-                    <Button onClick={() => setShowFundModal(true)}>
-                      Create Fund
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {funds.map((fund: any) => (
-                  <Card key={fund.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="text-xl">{fund.name}</CardTitle>
-                      <p className="text-sm text-charcoal-muted">{fund.memberName}</p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-4">
-                        <p className="text-sm text-charcoal-muted">Current Balance</p>
-                        <p className="font-mono text-2xl text-charcoal">
-                          {formatCurrency(fund.amount)}
-                        </p>
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === 'overview' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                {/* Pool Stats */}
+                <div className="grid md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <div className="w-12 h-12 bg-sage-dim rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <DollarSign className="w-6 h-6 text-sage" />
                       </div>
-                      <Button 
-                        variant="outline" 
-                        className="w-full"
-                        onClick={() => router.push(`/groups/${groupId}/funds/${fund.id}`)}
-                      >
-                        View Details
-                      </Button>
+                      <p className="text-sm text-charcoal-muted mb-1">Total Pool</p>
+                      <p className="font-display text-2xl text-charcoal">{formatCurrency(group?.totalPool || 0)}</p>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <div className="w-12 h-12 bg-terracotta-dim rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <Users className="w-6 h-6 text-terracotta" />
+                      </div>
+                      <p className="text-sm text-charcoal-muted mb-1">Total Members</p>
+                      <p className="font-display text-2xl text-charcoal">{group?.memberCount || 0}</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <div className="w-12 h-12 bg-sage-dim rounded-2xl flex items-center justify-center mx-auto mb-3">
+                        <TrendingUp className="w-6 h-6 text-sage" />
+                      </div>
+                      <p className="text-sm text-charcoal-muted mb-1">Interest Earned</p>
+                      <p className="font-display text-2xl text-charcoal">{formatCurrency(group?.totalInterest || 0)}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Quick Actions */}
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="space-y-4">
+                      <Button onClick={() => setShowLoanModal(true)} className="w-full">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Request Loan
+                      </Button>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <Button onClick={() => router.push(`/groups/${groupId}/members`)} variant="outline" className="w-full">
+                          <Users className="w-4 h-4 mr-2" />
+                          Manage Members
+                        </Button>
+                        <Button onClick={() => router.push(`/groups/${groupId}/contributions`)} variant="outline" className="w-full">
+                          <Calendar className="w-4 h-4 mr-2" />
+                          View Contributions
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {activeTab === 'members' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-display text-2xl text-charcoal">Group Members</h2>
+                  {isAdmin && (
+                    <Button onClick={() => router.push(`/groups/${groupId}/members`)} size="sm">
+                      Manage All
+                    </Button>
+                  )}
+                </div>
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <Users className="w-16 h-16 text-charcoal-muted mx-auto mb-3" />
+                    <h3 className="font-display text-xl text-charcoal mb-2">Coming Soon</h3>
+                    <p className="text-charcoal-secondary">
+                      Member management features will be available soon.
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {activeTab === 'loans' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-display text-2xl text-charcoal">Active Loans</h2>
+                  <Button onClick={() => setShowLoanModal(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Request Loan
+                  </Button>
+                </div>
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <DollarSign className="w-16 h-16 text-charcoal-muted mx-auto mb-3" />
+                    <h3 className="font-display text-xl text-charcoal mb-2">Coming Soon</h3>
+                    <p className="text-charcoal-secondary">
+                      Loan management features will be available soon.
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {activeTab === 'contributions' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-display text-2xl text-charcoal">Contributions</h2>
+                  <Button onClick={() => router.push(`/groups/${groupId}/contributions`)} variant="outline">
+                    View All
+                  </Button>
+                </div>
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <Calendar className="w-16 h-16 text-charcoal-muted mx-auto mb-3" />
+                    <h3 className="font-display text-xl text-charcoal mb-2">Coming Soon</h3>
+                    <p className="text-charcoal-secondary">
+                      Contribution management features will be available soon.
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {activeTab === 'year-end' && isAdmin && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-display text-2xl text-charcoal">Year-End Distribution</h2>
+                  <Button onClick={() => router.push(`/groups/${groupId}/year-end`)} variant="outline">
+                    Manage
+                  </Button>
+                </div>
+                <Card className="text-center py-12">
+                  <CardContent>
+                    <FileText className="w-16 h-16 text-charcoal-muted mx-auto mb-3" />
+                    <h3 className="font-display text-xl text-charcoal mb-2">Coming Soon</h3>
+                    <p className="text-charcoal-secondary">
+                      Year-end distribution features will be available soon.
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             )}
           </div>
-        )}
+        </div>
 
-        {activeTab === 'members' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="font-display text-2xl text-charcoal">Members</h2>
-              {group.isAdmin && (
-                <Button onClick={() => setShowInviteModal(true)}>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Invite Member
-                </Button>
-              )}
-            </div>
-
-            <div className="grid gap-4">
-              {members.map((member: any) => (
-                <Card key={member.id} className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-4">
-                    {member.user?.image ? (
-                      <img 
-                        src={member.user.image} 
-                        alt={member.user.name} 
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-sage flex items-center justify-center text-white font-semibold">
-                        {member.user?.name?.[0] || member.user?.email?.[0] || '?'}
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-medium text-charcoal">{member.user?.name || member.user?.email}</p>
-                      <Badge variant={member.role === 'ADMIN' ? 'default' : 'outline'} className="mt-1">
-                        {member.role}
-                      </Badge>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Invite Modal */}
-        <Modal
-          isOpen={showInviteModal}
-          onClose={() => setShowInviteModal(false)}
-          title="Invite Member"
-        >
-          <div className="space-y-4">
-            <Input
-              label="Email Address"
-              type="email"
-              placeholder="friend@example.com"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-            />
-            <div className="flex gap-3 pt-4">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => setShowInviteModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                className="flex-1"
-                onClick={handleInvite}
-                disabled={!inviteEmail}
-              >
-                Send Invite
-              </Button>
-            </div>
-          </div>
-        </Modal>
-
-        {/* Fund Modal */}
-        <Modal
-          isOpen={showFundModal}
-          onClose={() => setShowFundModal(false)}
-          title="Create New Fund"
-        >
-          <div className="space-y-4">
-            <Input
-              label="Fund Name"
-              placeholder="e.g., Personal Loan"
-              value={fundForm.name}
-              onChange={(e) => setFundForm({ ...fundForm, name: e.target.value })}
-            />
-            <Input
-              label="Member Name"
-              placeholder="Who is this fund for?"
-              value={fundForm.memberName}
-              onChange={(e) => setFundForm({ ...fundForm, memberName: e.target.value })}
-            />
-            <Input
-              label="Initial Amount"
-              type="number"
-              placeholder="0.00"
-              value={fundForm.amount}
-              onChange={(e) => setFundForm({ ...fundForm, amount: e.target.value })}
-            />
-            <div className="flex gap-3 pt-4">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => setShowFundModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                className="flex-1"
-                onClick={handleCreateFund}
-                disabled={!fundForm.name || !fundForm.memberName}
-              >
-                Create Fund
-              </Button>
-            </div>
-          </div>
-        </Modal>
+        {/* Loan Request Modal */}
+        <LoanRequestForm groupId={groupId} />
       </motion.div>
     </DashboardLayout>
   )

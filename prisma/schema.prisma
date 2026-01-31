@@ -8,73 +8,143 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String?
-  image         String?
-  createdAt     DateTime @default(now())
-  groups        GroupMember[]
-  ownedGroups   Group[]  @relation("GroupOwner")
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String?
+  image           String?
+  createdAt       DateTime @default(now())
+  groups          GroupMember[]
+  ownedGroups     Group[]   @relation("GroupOwner")
+  loans           Loan[]
+  coMakerLoans    CoMaker[]
+  notifications    Notification[]
 }
 
 model Group {
-  id            String   @id @default(cuid())
-  name          String
-  description   String?
-  interestRate  Float    @default(5.0)
-  ownerId       String
-  owner         User     @relation("GroupOwner", fields: [ownerId], references: [id])
-  members       GroupMember[]
-  funds         Fund[]
-  invites       Invite[]
-  createdAt     DateTime @default(now())
+  id                          String   @id @default(cuid())
+  name                        String
+  description                 String?
+  loanInterestRateMember       Float    @default(5.0)   // % per month
+  loanInterestRateNonMember   Float    @default(10.0)  // % per month
+  maxLoanPercent            Float    @default(50)     // % of average annual savings
+  termDuration              Int      @default(2)      // months
+  termStartDate             DateTime
+  termEndDate               DateTime
+  ownerId                  String
+  owner                    User     @relation("GroupOwner", fields: [ownerId], references: [id])
+  members                  GroupMember[]
+  loans                    Loan[]
+  contributions             Contribution[]
+  settings                 GroupSettings?
+  createdAt                DateTime @default(now())
+}
+
+model GroupSettings {
+  id                        String   @id @default(cuid())
+  groupId                  String   @unique
+  group                    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  gracePeriodDays          Int      @default(7)      // days for missed payments
+  reminderDaysBeforePaydate Int      @default(2)      // days before contribution
+  yearEndDate               DateTime
+  yearEndDateGracePeriod    Int      @default(5)      // days after year-end
+  createdAt               DateTime @default(now())
 }
 
 model GroupMember {
-  id        String   @id @default(cuid())
-  groupId   String
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  role      Role     @default(MEMBER)
-  joinedAt  DateTime @default(now())
+  id                       String   @id @default(cuid())
+  groupId                  String
+  group                    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId                   String
+  user                     User     @relation(fields: [userId], references: [id])
+  role                     Role     @default(MEMBER)
+  biWeeklyContribution      Float    // Fixed bi-weekly amount
+  personalPayday           Int      // Day of month (1-31) for schedule
+  isActive                 Boolean  @default(true)  // Eligible for interest
+  missedConsecutivePayments Int      @default(0)
+  totalContributions       Float    @default(0)
+  joinedAt                 DateTime @default(now())
+  contributions             Contribution[]
   
   @@unique([groupId, userId])
 }
 
-model Invite {
-  id        String   @id @default(cuid())
-  email     String
-  groupId   String
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  token     String   @unique
-  status    InviteStatus @default(PENDING)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+model Loan {
+  id               String      @id @default(cuid())
+  groupId          String
+  group            Group       @relation(fields: [groupId], references: [id])
+  borrowerId       String
+  borrower         User        @relation(fields: [borrowerId], references: [id])
+  isNonMember      Boolean     @default(false)
+  nonMemberName    String?
+  amount           Float
+  interestRate     Float       // % per month
+  totalInterest    Float
+  termMonths       Int
+  status           LoanStatus   @default(PENDING)
+  adminApprovalId  String?     // Which admin approved
+  adminApprovedAt  DateTime?
+  approvedDate     DateTime
+  dueDate          DateTime
+  repaidAmount     Float       @default(0)
+  isFullyRepaid    Boolean     @default(false)
+  defaultNotified   Boolean     @default(false)  // If past-due notified
+  coMakers         CoMaker[]
+  repayments       LoanRepayment[]
+  createdAt        DateTime    @default(now())
 }
 
-model Fund {
+model CoMaker {
   id          String   @id @default(cuid())
-  name        String
-  amount      Float
-  memberName  String
-  groupId     String
-  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  payments    Payment[]
+  loanId      String
+  loan        Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
   createdAt   DateTime @default(now())
+  
+  @@unique([loanId, userId])
 }
 
-model Payment {
+model Contribution {
+  id              String   @id @default(cuid())
+  groupId         String
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  memberId        String
+  member          GroupMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  scheduledDate   DateTime // Expected payment date
+  paidDate        DateTime? // When actually paid
+  amount          Float
+  isMissed        Boolean  @default(false)
+  gracePeriodEnd  DateTime? // 1 week after scheduled
+  note            String?
+  createdAt       DateTime @default(now())
+  
+  @@index([memberId, scheduledDate])
+}
+
+model LoanRepayment {
   id          String   @id @default(cuid())
-  fundId      String
-  fund        Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  loanId      String
+  loan        Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
   amount      Float
-  interest    Float    @default(0)
-  principal   Float    @default(0)
-  month       Int
-  year        Int
+  interest    Float
+  principal   Float
+  paymentDate DateTime
   note        String?
   createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  title       String
+  message     String
+  actionUrl   String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  
+  @@index([userId, createdAt])
 }
 
 enum Role {
@@ -82,9 +152,22 @@ enum Role {
   MEMBER
 }
 
-enum InviteStatus {
-  PENDING
-  ACCEPTED
-  EXPIRED
-  CANCELLED
+enum LoanStatus {
+  PENDING     // Submitted, awaiting approval
+  APPROVED    // Admin approved, active
+  REPAID      // Fully paid
+  DEFAULTED   // Past due, 2+ months
+  REJECTED    // Admin rejected
+}
+
+enum NotificationType {
+  CONTRIBUTION_DUE
+  CONTRIBUTION_MISSED
+  LOAN_APPROVED
+  LOAN_REJECTED
+  LOAN_DUE_SOON
+  LOAN_OVERDUE
+  LOAN_REPAID
+  LOAN_DEFAULTED
+  YEAR_END_DISTRIBUTION
 }

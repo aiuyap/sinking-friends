@@ -37,6 +37,7 @@ export function useAuth() {
   return {
     user,
     loading,
+    isLoading: loading,
     signInWithGoogle,
     logout,
   }

@@ -6,9 +6,10 @@ import {
   LayoutDashboard, 
   Users, 
   DollarSign, 
-  Settings,
+  Settings, 
   LogOut
 } from 'lucide-react'
+import { NotificationBell } from './NotificationBell'
 
 interface SidebarProps {
   user: any
@@ -61,6 +62,11 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
             )
           })}
         </nav>
+
+        {/* Notification Bell */}
+        <div className="flex-1">
+          <NotificationBell />
+        </div>
 
         {/* User Profile */}
         <div className="p-4 border-t border-black/[0.06]">
