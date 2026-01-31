@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ArrowLeft, Users, DollarSign, Calendar, Plus, Settings, TrendingUp, FileText } from 'lucide-react'
-import { LoanRequestForm } from '@/components/loans/LoanRequestForm'
+import LoanRequestForm from '@/components/loans/LoanRequestForm'
 
 type Tab = 'overview' | 'members' | 'loans' | 'contributions' | 'year-end'
 

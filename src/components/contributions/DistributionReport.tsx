@@ -5,8 +5,9 @@ import { motion } from 'framer-motion'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { DollarSign, PieChart, Users, CheckCircle, XCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface MemberDistribution {
   memberId: string
@@ -43,7 +44,6 @@ export function DistributionReport({
 
   return (
     <div className={cn('space-y-6', className)}>
-      {/* Summary Cards */}
       <div className="grid md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6">
@@ -82,7 +82,6 @@ export function DistributionReport({
         </Card>
       </div>
 
-      {/* Stats */}
       <Card>
         <CardHeader>
           <CardTitle>Distribution Statistics</CardTitle>
@@ -103,70 +102,16 @@ export function DistributionReport({
         </CardContent>
       </Card>
 
-      {/* Distribution Details */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Member Distribution Breakdown</CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowDetails(!showDetails)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setShowDetails(!showDetails)}>
               {showDetails ? 'Hide Details' : 'Show Details'}
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Active Members Section */}
-          <div>
-            <h4 className="font-display text-lg text-charcoal mb-3 flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-success" />
-              Active Members (Eligible for Interest)
-            </h4>
-            {activeMembers.length === 0 ? (
-              <div className="bg-cream-dim rounded-lg p-4 text-center">
-                <p className="text-charcoal-secondary">No active members</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {activeMembers.map((member, index) => (
-                  <motion.div
-                    key={member.memberId}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 50, duration: 0.3 }}
-                    className="bg-cream-dim rounded-lg p-4"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p className="font-medium text-charcoal">{member.memberName || 'Unknown'}</p>
-                        <p className="text-sm text-charcoal-muted">Member ID: {member.memberId.slice(0, 8)}...</p>
-                      </div>
-                      <Badge variant="success">Active</Badge>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4 pt-2 border-t border-black/[0.06]">
-                      <div>
-                        <p className="text-sm text-charcoal-muted mb-1">Contributions</p>
-                        <p className="font-mono text-lg text-charcoal">{formatCurrency(member.contributionAmount)}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-charcoal-muted mb-1">Interest Share</p>
-                        <p className="font-mono text-lg text-sage">+{formatCurrency(member.interestShare)}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-charcoal-muted mb-1">Total Payout</p>
-                        <p className="font-display text-2xl text-success">{formatCurrency(member.totalPayout)}</p>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Inactive Members Section */}
           {inactiveMembers.length > 0 && (
             <div className="mt-6 pt-4 border-t border-black/[0.06]">
               <h4 className="font-display text-lg text-charcoal mb-3 flex items-center gap-2">
@@ -205,19 +150,16 @@ export function DistributionReport({
                       <p className="font-display text-xl text-charcoal">
                         Total Payout: {formatCurrency(member.totalPayout)}
                       </p>
-                      <p className="text-sm text-danger">
-                        {member.reason}
-                      </p>
+                      <p className="text-sm text-danger">{member.reason}</p>
                     </div>
                   </motion.div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Approval Actions */}
       <Card>
         <CardContent className="p-6 text-center space-y-4">
           {!isApproved ? (

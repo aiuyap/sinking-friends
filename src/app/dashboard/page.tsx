@@ -21,7 +21,7 @@ export default function DashboardPage() {
     activeLoans: 0,
     myContributions: 0,
   })
-  const [groups, setGroups] = useState([])
+  const [groups, setGroups] = useState<Array<{ id: string; name: string; description?: string | null; memberCount?: number; totalPool?: number }>>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -248,7 +248,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-2 text-sm text-charcoal-muted">
                           <DollarSign className="w-4 h-4" />
-                          <span>Pool: {formatCurrency(group.totalPool)}</span>
+                          <span>Pool: {formatCurrency(group.totalPool || 0)}</span>
                         </div>
                       </div>
                     </CardContent>

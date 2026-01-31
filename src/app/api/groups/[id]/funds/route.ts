@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
-// GET /api/groups/[id]/funds - Get all funds for group
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
 
-    // Mock data - replace with actual database queries
     const funds = [
       {
         id: '1',
@@ -30,23 +28,18 @@ export async function GET(
     return NextResponse.json({ funds })
   } catch (error) {
     console.error('Error fetching funds:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch funds' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch funds' }, { status: 500 })
   }
 }
 
-// POST /api/groups/[id]/funds - Create new fund
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const { name, memberName, amount } = await request.json()
 
-    // Mock fund creation - replace with actual database insertion
     const newFund = {
       id: Math.random().toString(36).substr(2, 9),
       name,
@@ -59,9 +52,6 @@ export async function POST(
     return NextResponse.json(newFund, { status: 201 })
   } catch (error) {
     console.error('Error creating fund:', error)
-    return NextResponse.json(
-      { error: 'Failed to create fund' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to create fund' }, { status: 500 })
   }
 }

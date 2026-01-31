@@ -42,7 +42,8 @@ export default function LoanRequestForm({ groupId }: { groupId: string }) {
     }
   }
 
-  const handleAmountChange = (value: string) => {
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
     setAmount(value)
     if (eligibility) {
       const enteredAmount = parseFloat(value) || 0

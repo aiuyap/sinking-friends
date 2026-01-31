@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { ContributionList } from '@/components/contributions/ContributionCard'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Calendar, DollarSign, ArrowLeft, CheckCircle } from 'lucide-react'
@@ -37,10 +38,10 @@ export default function GroupContributionsPage() {
         setContributions(data.contributions || [])
         
         // Calculate stats
-        const total = data.contributions.reduce((sum, c) => sum + c.amount, 0)
-        const paid = data.contributions.filter(c => c.paidDate).reduce((sum, c) => sum + c.amount, 0)
-        const pending = data.contributions.filter(c => !c.paidDate && !c.isMissed).reduce((sum, c) => sum + c.amount, 0)
-        const missed = data.contributions.filter(c => c.isMissed).length
+        const total = (data.contributions || []).reduce((sum: number, c: any) => sum + c.amount, 0)
+        const paid = (data.contributions || []).filter((c: any) => c.paidDate).reduce((sum: number, c: any) => sum + c.amount, 0)
+        const pending = (data.contributions || []).filter((c: any) => !c.paidDate && !c.isMissed).reduce((sum: number, c: any) => sum + c.amount, 0)
+        const missed = (data.contributions || []).filter((c: any) => c.isMissed).length
         
         setStats({ total, paid, pending, missed })
       }

@@ -4,10 +4,10 @@ import prisma from '@/lib/prisma'
 // GET /api/payments/[fundId] - Get all payments for a fund
 export async function GET(
   request: Request,
-  { params }: { params: { fundId: string } }
+  { params }: { params: Promise<{ fundId: string }> }
 ) {
   try {
-    const { fundId } = params
+    const { fundId } = await params
 
     // Mock data - replace with actual database queries
     const payments = [
@@ -48,10 +48,10 @@ export async function GET(
 // POST /api/payments/[fundId] - Create new payment
 export async function POST(
   request: Request,
-  { params }: { params: { fundId: string } }
+  { params }: { params: Promise<{ fundId: string }> }
 ) {
   try {
-    const { fundId } = params
+    const { fundId } = await params
     const { amount, interest, principal, month, year, note } = await request.json()
 
     // Mock payment creation - replace with actual database insertion

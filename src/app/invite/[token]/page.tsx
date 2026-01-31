@@ -8,19 +8,25 @@ import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
-export default function InvitePage({ params }: { params: { token: string } }) {
+export default function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const router = useRouter()
   const { user, signInWithGoogle } = useAuth()
   const [status, setStatus] = useState<'loading' | 'valid' | 'invalid' | 'accepted'>('loading')
   const [invite, setInvite] = useState<any>(null)
+  const [token, setToken] = useState<string>('')
 
   useEffect(() => {
-    validateInvite()
-  }, [params.token])
+    const resolveParams = async () => {
+      const resolved = await params
+      setToken(resolved.token)
+      validateInvite(resolved.token)
+    }
+    resolveParams()
+  }, [params])
 
-  const validateInvite = async () => {
+  const validateInvite = async (token: string) => {
     try {
-      const response = await fetch(`/api/invites/${params.token}`)
+      const response = await fetch(`/api/invites/${token}`)
       if (response.ok) {
         const data = await response.json()
         setInvite(data.invite)
@@ -44,7 +50,7 @@ export default function InvitePage({ params }: { params: { token: string } }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: params.token,
+          token: token,
           userId: user.uid,
         }),
       })
@@ -76,8 +82,8 @@ export default function InvitePage({ params }: { params: { token: string } }) {
               </div>
             )}
             {status === 'valid' && (
-              <div className="w-16 h-16 bg-sage-dim rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-sage" />
+              <div className="w-16 h-16 bg-success-dim rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-success" />
               </div>
             )}
             {status === 'invalid' && (
@@ -86,47 +92,41 @@ export default function InvitePage({ params }: { params: { token: string } }) {
               </div>
             )}
             {status === 'accepted' && (
-              <div className="w-16 h-16 bg-success-dim rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-success" />
+              <div className="w-16 h-16 bg-sage-dim rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-sage" />
               </div>
             )}
             <CardTitle>
               {status === 'loading' && 'Validating Invitation...'}
-              {status === 'valid' && 'You are Invited!'}
+              {status === 'valid' && 'You are invited!'}
               {status === 'invalid' && 'Invalid Invitation'}
-              {status === 'accepted' && 'Welcome Aboard!'}
+              {status === 'accepted' && 'Invitation Accepted!'}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {status === 'loading' && (
-              <p className="text-charcoal-secondary">
-                Please wait while we validate your invitation...
-              </p>
+              <p className="text-charcoal-secondary">Please wait while we verify your invitation.</p>
             )}
-            {status === 'valid' && invite && (
-              <div className="space-y-6">
-                <p className="text-charcoal-secondary">
-                  You have been invited to join <strong className="text-charcoal">{invite.group.name}</strong>
+            {status === 'valid' && (
+              <>
+                <p className="text-charcoal-secondary mb-6">
+                  You have been invited to join <strong>{invite?.group?.name || 'a group'}</strong>.
+                  {invite?.email && ` This invitation is for ${invite.email}.`}
                 </p>
-                <Button className="w-full" onClick={handleAccept}>
-                  {user ? 'Accept Invitation' : 'Sign in to Accept'}
+                <Button onClick={handleAccept} className="w-full">
+                  Accept Invitation
                 </Button>
-              </div>
+              </>
             )}
             {status === 'invalid' && (
-              <div className="space-y-6">
-                <p className="text-charcoal-secondary">
-                  This invitation is invalid or has expired. Please ask the group admin to send a new invitation.
-                </p>
-                <Button variant="outline" className="w-full" onClick={() => router.push('/')}>Go Home</Button>
-              </div>
+              <p className="text-charcoal-secondary">
+                This invitation is invalid or has expired. Please contact your group administrator for a new invitation.
+              </p>
             )}
             {status === 'accepted' && (
-              <div className="space-y-6">
-                <p className="text-charcoal-secondary">
-                  You have successfully joined the group! Redirecting to dashboard...
-                </p>
-              </div>
+              <p className="text-charcoal-secondary">
+                Welcome to the group! Redirecting you to the dashboard...
+              </p>
             )}
           </CardContent>
         </Card>

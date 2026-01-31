@@ -1,127 +1,91 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { generateInviteToken } from '@/lib/utils'
 
-// GET /api/groups/[id]/members - List group members
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string; memberId: string }> }
 ) {
   try {
-    const groupId = params.id
+    const { id: groupId, memberId } = await params
 
-    const members = await prisma.groupMember.findMany({
-      where: { groupId },
+    const member = await prisma.groupMember.findUnique({
+      where: { id: memberId },
       include: {
-        user: {
-          select: { id: true, name: true, email: true, image: true } },
-        },
+        user: { select: { id: true, name: true, email: true, image: true } },
         contributions: true,
       },
-      orderBy: { joinedAt: 'asc' },
     })
 
-    // Check for active loans and co-maker status for each member
-    const memberIds = members.map(m => m.userId)
+    if (!member || member.groupId !== groupId) {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+    }
+
     const activeLoans = await prisma.loan.findMany({
-      where: {
-        borrowerId: { in: memberIds },
-        status: { in: ['APPROVED', 'PENDING'] },
-      },
+      where: { borrowerId: member.userId, status: { in: ['APPROVED', 'PENDING'] } },
     })
 
-    const activeCoMakerLoans = await prisma.coMaker.findMany({
-      where: {
-        userId: { in: memberIds },
-        loan: {
-          status: { in: ['APPROVED', 'PENDING'] },
-        },
-      },
+    const activeCoMakers = await prisma.coMaker.findMany({
+      where: { userId: member.userId, loan: { status: { in: ['APPROVED', 'PENDING'] } } },
     })
 
-    const membersWithStatus = members.map(member => {
-      const hasActiveLoan = activeLoans.some(l => l.borrowerId === member.userId)
-      const hasActiveCoMakerRole = activeCoMakerLoans.some(cm => cm.userId === member.userId)
-
-      return {
+    return NextResponse.json({
+      member: {
         ...member,
-        hasActiveLoan,
-        hasActiveCoMakerRole,
-        canBeCoMaker: !hasActiveLoan && !hasActiveCoMakerRole,
-        canBorrow: member.isActive && !hasActiveLoan && !hasActiveCoMakerRole,
-      }
+        hasActiveLoan: activeLoans.length > 0,
+        hasActiveCoMakerRole: activeCoMakers.length > 0,
+      },
     })
-
-    return NextResponse.json({ members: membersWithStatus })
   } catch (error) {
-    console.error('Error fetching members:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch members' },
-      { status: 500 }
-    )
+    console.error('Error fetching member:', error)
+    return NextResponse.json({ error: 'Failed to fetch member' }, { status: 500 })
   }
 }
 
-// PUT /api/groups/[id]/members/[memberId] - Update member settings
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string; memberId: string } }
+  { params }: { params: Promise<{ id: string; memberId: string }> }
 ) {
   try {
-    const groupId = params.id
-    const memberId = params.memberId
+    const { memberId } = await params
     const body = await request.json()
     const { biWeeklyContribution, personalPayday } = body
 
-    // Get user from auth header
-    const userId = request.headers.get('x-user-id') || 'mock-user-id'
-
-    // Get group
-    const group = await prisma.group.findUnique({
-      where: { id: groupId },
-    })
-
-    if (!group) {
-      return NextResponse.json(
-        { error: 'Group not found' },
-        { status: 404 }
-      )
-    }
-
-    // Get member
     const member = await prisma.groupMember.findUnique({
       where: { id: memberId },
+      include: { contributions: true },
     })
 
     if (!member) {
-      return NextResponse.json(
-        { error: 'Member not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 })
     }
 
-    if (member.userId !== userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      )
+    const activeLoans = await prisma.loan.findMany({
+      where: { borrowerId: member.userId, status: { in: ['APPROVED', 'PENDING'] } },
+    })
+
+    if (activeLoans.length > 0) {
+      return NextResponse.json({ error: 'Cannot update settings while member has active loans' }, { status: 403 })
     }
 
-    // Update member
+    const activeCoMakerLoans = await prisma.coMaker.findMany({
+      where: { userId: member.userId, loan: { status: { in: ['APPROVED', 'PENDING'] } } },
+    })
+
+    if (activeCoMakerLoans.length > 0) {
+      return NextResponse.json({ error: 'Cannot update settings while member is co-maker on active loans' }, { status: 403 })
+    }
+
     const updatedMember = await prisma.groupMember.update({
       where: { id: memberId },
       data: {
-        biWeeklyContribution,
-        personalPayday,
+        biWeeklyContribution: biWeeklyContribution ?? member.biWeeklyContribution,
+        personalPayday: personalPayday ?? member.personalPayday,
       },
     })
 
     return NextResponse.json({ member: updatedMember })
   } catch (error) {
     console.error('Error updating member:', error)
-    return NextResponse.json(
-      { error: 'Failed to update member' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update member' }, { status: 500 })
   }
 }
