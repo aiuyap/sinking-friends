@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary - Warm Cream */
+    --color-primary: 246 245 236;
+    --color-primary-dim: 235 233 220;
+    
+    /* Text - Deep Charcoal */
+    --text-primary: 26 26 26;
+    --text-secondary: 74 74 74;
+    --text-muted: 136 136 136;
+    
+    /* Backgrounds */
+    --bg-main: 246 245 236;
+    --bg-card: 255 255 255;
+    --bg-elevated: 250 250 250;
+    
+    /* Accent - Sophisticated Sage */
+    --color-accent: 107 142 107;
+    --color-accent-hover: 85 117 85;
+    --color-accent-dim: 107 142 107;
+    
+    /* Secondary - Warm Terracotta */
+    --color-secondary: 196 149 106;
+    --color-secondary-dim: 196 149 106;
+    
+    /* Semantic */
+    --color-success: 74 157 107;
+    --color-success-dim: 74 157 107;
+    --color-danger: 199 93 93;
+    --color-danger-dim: 199 93 93;
+    
+    /* Borders */
+    --border-subtle: 0 0 0;
+    --border-accent: 107 142 107;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-[#F6F5EC] text-charcoal;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'DM Serif Display', serif;
+    @apply text-charcoal;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  image         String?
+  createdAt     DateTime @default(now())
+  groups        GroupMember[]
+  ownedGroups   Group[]  @relation("GroupOwner")
+}
+
+model Group {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  interestRate  Float    @default(5.0)
+  ownerId       String
+  owner         User     @relation("GroupOwner", fields: [ownerId], references: [id])
+  members       GroupMember[]
+  funds         Fund[]
+  invites       Invite[]
+  createdAt     DateTime @default(now())
+}
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      Role     @default(MEMBER)
+  joinedAt  DateTime @default(now())
+  
+  @@unique([groupId, userId])
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  email     String
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  status    InviteStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Fund {
+  id          String   @id @default(cuid())
+  name        String
+  amount      Float
+  memberName  String
+  groupId     String
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  payments    Payment[]
+  createdAt   DateTime @default(now())
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  fundId      String
+  fund        Fund     @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  amount      Float
+  interest    Float    @default(0)
+  principal   Float    @default(0)
+  month       Int
+  year        Int
+  note        String?
+  createdAt   DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
