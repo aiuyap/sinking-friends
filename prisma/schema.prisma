@@ -30,9 +30,11 @@ model Group {
   termDuration              Int      @default(2)      // months
   termStartDate             DateTime
   termEndDate               DateTime
+  // The group owner is the same as the group creator
   ownerId                  String
   owner                    User     @relation("GroupOwner", fields: [ownerId], references: [id])
   members                  GroupMember[]
+  // Note: ownerId represents the group creator with full administrative rights
   loans                    Loan[]
   contributions             Contribution[]
   settings                 GroupSettings?
