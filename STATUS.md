@@ -1,19 +1,41 @@
 # Sinking Fund Platform - Implementation Status
 
 **Last Updated**: February 1, 2026  
-**Current Phase**: Planning Complete → Ready for Implementation
+**Current Phase**: Implementation In Progress  
+**Build Status**: PASSING
 
 ## Quick Summary
 
 | Category | Status | Progress |
 |----------|--------|----------|
-| Core Foundation | ✅ Complete | 100% |
-| Authentication | ✅ Implemented | 100% |
-| Member Management | ❌ Missing UI | 0% |
-| Loan Management | ❌ Missing UI | 0% |
-| Notifications | ❌ Missing Page | 0% |
-| Group Settings | ❌ Missing Page | 0% |
-| API Data Quality | ⚠️ Mock Data | 50% |
+| Core Foundation | PASSING | 100% |
+| Authentication | Partial | 60% |
+| Member Management | Complete | 100% |
+| Loan Management | Partial | 80% |
+| Notifications | Complete | 100% |
+| Group Settings | Missing | 0% |
+| API Data Quality | Mock Data | 30% |
+
+## Build Fixes Applied (Feb 1, 2026)
+
+1. **Firebase Admin SDK Error** - Separated client/server Firebase code:
+   - Created `/src/lib/firebase-client.ts` for browser-safe Firebase
+   - Created `/src/lib/firebase-admin.ts` for server-only Firebase Admin
+   - Removed old `/src/lib/firebase.ts`
+   - Fixed middleware to not use firebase-admin (Edge Runtime incompatible)
+
+2. **Prisma Schema Error** - Fixed duplicate Group model definition
+
+3. **Button Component** - Added missing `success` variant
+
+4. **API Route Params** - Updated routes to use `Promise<{ id: string }>` for Next.js 16
+
+5. **Login 404 Fix** - Fixed authentication flow:
+   - Middleware now redirects to `/` instead of non-existent `/login`
+   - Added session cookie (`__session`) management in `useAuth` hook
+   - Cookie is set on login and cleared on logout
+
+---
 
 ## Phase 1: Authentication Integration
 
@@ -23,15 +45,33 @@ Connect Firebase Auth to API routes (currently using mock `x-user-id` headers)
 ### Tasks
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 1.1 | Create user sync on login | ✅ Completed | Created user record if doesn't exist |
-| 1.2 | Update API routes with real auth | ✅ Completed | Replaced mock headers with authenticated user ID |
-| 1.3 | Add `createdBy` field to Group model | ✅ Completed | Updated schema to track group creator for admin checks |
+| 1.1 | Create user sync on login | COMPLETE | `syncUserWithDatabase()` function exists |
+| 1.2 | Update API routes with real auth | PARTIAL | Only 2/10 routes use real auth |
+| 1.3 | Add `createdBy` field to Group model | COMPLETE | Using `ownerId` field |
 
-### Files to Modify
-- `/src/lib/auth.ts` (new file)
-- `/src/middleware.ts` (new file)
-- `/src/app/api/*` (all routes)
-- `/prisma/schema.prisma` (add createdBy field)
+### Details
+**Routes using REAL auth:**
+- `/api/groups/[id]/invite` - Uses `verifyIdToken()`
+- `/api/notifications/read-all` - Uses `verifyIdToken()`
+
+**Routes still using MOCK `x-user-id`:**
+- `/api/dashboard`
+- `/api/notifications`
+- `/api/notifications/[id]`
+- `/api/groups/[id]/loan-eligibility`
+- `/api/groups/[id]/contributions`
+- `/api/groups/[id]/contributions/[contributionId]`
+- `/api/loans/[id]`
+- `/api/groups/[id]/route.ts`
+
+### Files Modified
+- `/src/lib/firebase-client.ts` (new - client only)
+- `/src/lib/firebase-admin.ts` (new - server only)
+- `/src/lib/auth.ts` (updated imports)
+- `/src/middleware.ts` (simplified - no firebase-admin)
+- `/src/hooks/useAuth.ts` (updated imports)
+
+---
 
 ## Phase 2: Member Management UI
 
@@ -41,26 +81,19 @@ Create complete member management with email invitations (admin only)
 ### Tasks
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 2.1 | Create Member List page | ⏳ Pending | `/groups/[id]/members/page.tsx` |
-| 2.2 | Create MemberCard component | ⏳ Pending | Display avatar, name, status, contributions |
-| 2.3 | Create InviteMemberModal | ⏳ Pending | Email invitation flow (admin only) |
-| 2.4 | Create Invite API endpoint | ⏳ Pending | Generate invite token, 7-day expiry |
-| 2.5 | Update Invite acceptance flow | ⏳ Pending | Verify token, create GroupMember |
+| 2.1 | Create Member List page | COMPLETE | `/groups/[id]/members/page.tsx` |
+| 2.2 | Create MemberCard component | COMPLETE | Shows avatar, name, status, contributions |
+| 2.3 | Create InviteMemberModal | COMPLETE | Email input, API call, toast notifications |
+| 2.4 | Create Invite API endpoint | COMPLETE | Token generation, 7-day expiry, admin check |
+| 2.5 | Update Invite acceptance flow | COMPLETE | Via `/api/groups/[id]/members` POST |
 
-### Invite Flow
-```
-1. Admin enters member email
-2. System generates unique invite token (7-day expiry)
-3. Show invite link for admin to copy/send
-4. User clicks link → joins group as member
-5. User sets bi-weekly contribution and payday
-```
-
-### Files to Create
+### Files Created
 - `/src/app/groups/[id]/members/page.tsx`
 - `/src/components/members/MemberCard.tsx`
 - `/src/components/members/InviteMemberModal.tsx`
 - `/src/app/api/groups/[id]/invite/route.ts`
+
+---
 
 ## Phase 3: Loan Management UI
 
@@ -70,29 +103,28 @@ Create loan list, detail, and repayment pages
 ### Tasks
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 3.1 | Create Loan List page | ⏳ Pending | `/groups/[id]/loans/page.tsx` |
-| 3.2 | Create LoanCard component | ⏳ Pending | Display loan summary (amount, status, borrower) |
-| 3.3 | Create Loan Detail page | ⏳ Pending | `/groups/[id]/loans/[loanId]/page.tsx` |
-| 3.4 | Add eligibility to request form | ⏳ Pending | Show max loan amount immediately |
-| 3.5 | Add admin approval UI | ⏳ Pending | Approve/Reject buttons (group creator only) |
-| 3.6 | Create RepaymentHistory component | ⏳ Pending | List all payments on loan detail |
+| 3.1 | Create Loan List page | COMPLETE | `/groups/[id]/loans/page.tsx` with filters |
+| 3.2 | Create LoanCard component | COMPLETE | Shows amount, status, borrower, due date |
+| 3.3 | Create Loan Detail page | COMPLETE | `/groups/[id]/loans/[loanId]/page.tsx` |
+| 3.4 | Add eligibility to request form | COMPLETE | LoanEligibilityDisplay component |
+| 3.5 | Add admin approval UI | PARTIAL | Buttons exist but NO onClick handlers |
+| 3.6 | Create RepaymentHistory component | MISSING | Only inline implementation exists |
 
-### Loan Detail Page Layout
-```
-Header: Borrower name, amount, status, dates
-Details: Principal, interest rate, total due, due date, co-maker
-Repayment History: Date, amount, principal/interest split
-Admin Actions: Approve/Reject (if pending)
-```
-
-### Files to Create
+### Files Created
 - `/src/app/groups/[id]/loans/page.tsx`
 - `/src/app/groups/[id]/loans/[loanId]/page.tsx`
 - `/src/components/loans/LoanCard.tsx`
-- `/src/components/loans/RepaymentHistory.tsx`
+- `/src/components/loans/LoanEligibilityDisplay.tsx`
+- `/src/components/loans/LoanRequestForm.tsx`
 
-### Files to Modify
-- `/src/components/loans/LoanRequestForm.tsx` (add eligibility display)
+### Files Missing
+- `/src/components/loans/RepaymentHistory.tsx` - Need to extract from loan detail page
+
+### Action Items
+- [ ] Add onClick handlers for Approve/Reject buttons on loan detail page
+- [ ] Create separate RepaymentHistory component
+
+---
 
 ## Phase 4: Notification Center
 
@@ -102,14 +134,16 @@ Full page to manage all notifications
 ### Tasks
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 4.1 | Create Notification Center page | ⏳ Pending | `/notifications/page.tsx` |
-| 4.2 | Create NotificationList component | ⏳ Pending | Filter tabs (All, Unread, Loans, Contributions) |
-| 4.3 | Add "Mark all as read" endpoint | ⏳ Pending | `/api/notifications/read-all/route.ts` |
+| 4.1 | Create Notification Center page | COMPLETE | `/notifications/page.tsx` |
+| 4.2 | Create NotificationList component | COMPLETE | Filter tabs, mark as read |
+| 4.3 | Add "Mark all as read" endpoint | COMPLETE | Real auth, updates DB |
 
-### Files to Create
+### Files Created
 - `/src/app/notifications/page.tsx`
 - `/src/components/notifications/NotificationList.tsx`
 - `/src/app/api/notifications/read-all/route.ts`
+
+---
 
 ## Phase 5: Group Settings
 
@@ -119,10 +153,14 @@ Admin page to configure group settings
 ### Tasks
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 5.1 | Create Group Settings page | ⏳ Pending | `/groups/[id]/settings/page.tsx` |
-| 5.2 | Add Update Group API | ⏳ Pending | `/api/groups/[id]/settings/route.ts` |
+| 5.1 | Create Group Settings page | NOT STARTED | File does not exist |
+| 5.2 | Add Update Group API | NOT STARTED | File does not exist |
 
-### Settings Form Fields
+### Files to Create
+- `/src/app/groups/[id]/settings/page.tsx`
+- `/src/app/api/groups/[id]/settings/route.ts`
+
+### Settings Form Fields (Planned)
 - Group name
 - Description
 - Interest rate (members)
@@ -132,9 +170,7 @@ Admin page to configure group settings
 - Year-end distribution date
 - **Danger zone**: Delete group
 
-### Files to Create
-- `/src/app/groups/[id]/settings/page.tsx`
-- `/src/app/api/groups/[id]/settings/route.ts`
+---
 
 ## Phase 6: Fix Mock Data
 
@@ -144,11 +180,11 @@ Replace mock data with real database queries
 ### Tasks
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 6.1 | Fix Dashboard API | ⏳ Pending | Query real user stats |
-| 6.2 | Fix Group List API | ⏳ Pending | Query user's groups |
-| 6.3 | Fix Group Detail API | ⏳ Pending | Return real group data |
-| 6.4 | Fix Loans List API | ⏳ Pending | Return real loans |
-| 6.5 | Fix Members List API | ⏳ Pending | Return real members |
+| 6.1 | Fix Dashboard API | NOT STARTED | Returns mock stats |
+| 6.2 | Fix Group List API | NOT STARTED | Returns mock groups |
+| 6.3 | Fix Group Detail API | PARTIAL | Queries DB but missing some data |
+| 6.4 | Fix Loans List API | NOT STARTED | Returns mock loans |
+| 6.5 | Fix Members List API | NOT STARTED | Returns mock members |
 
 ### Files to Modify
 - `/src/app/api/dashboard/route.ts`
@@ -157,20 +193,25 @@ Replace mock data with real database queries
 - `/src/app/api/groups/[id]/loans/route.ts`
 - `/src/app/api/groups/[id]/members/route.ts`
 
-## Implementation Order
+---
 
-### Week 1
-1. Phase 1: Authentication Integration
-2. Phase 6.1-6.3: Fix critical mock data
+## Implementation Order (Updated)
 
-### Week 2
-3. Phase 2: Member Management UI
-4. Phase 3.1-3.2: Loan List & Detail pages
+### Priority 1 (Critical)
+1. Add onClick handlers for loan Approve/Reject buttons
+2. Create RepaymentHistory component
+3. Create Group Settings page and API
 
-### Week 3
-5. Phase 4: Notification Center
-6. Phase 5: Group Settings
-7. Phase 6.4-6.5: Fix remaining mock data
+### Priority 2 (Important)
+4. Update remaining API routes to use real auth
+5. Fix Dashboard API to return real data
+6. Fix Group List API to return real data
+
+### Priority 3 (Nice to Have)
+7. Fix remaining mock data in other APIs
+8. Add proper error handling throughout
+
+---
 
 ## Design System
 
@@ -187,7 +228,9 @@ Replace mock data with real database queries
 - Body: Inter
 - Monospace: JetBrains Mono
 
-## Notes
+---
+
+## Technical Notes
 
 ### Email Invitations
 - For MVP: Display invite link for admin to copy/send manually
@@ -199,9 +242,17 @@ Replace mock data with real database queries
 - Vercel Cron recommended for production
 
 ### Admin Checks
-- Only group creator (`createdBy`) can invite members
+- Only group creator (`ownerId`) can invite members
 - Only group creator can approve/reject loans
 - Only group creator can access settings page
 
-**Version**: 2.0 (Planning Complete)  
-**Ready for Implementation**: Yes
+### Firebase Setup
+- Client SDK: `/src/lib/firebase-client.ts`
+- Admin SDK: `/src/lib/firebase-admin.ts` (server-only)
+- Middleware: Basic cookie check only (Edge Runtime compatible)
+
+---
+
+**Version**: 3.0 (Validated)  
+**Build Status**: PASSING  
+**Last Validated**: February 1, 2026

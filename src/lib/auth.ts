@@ -1,8 +1,5 @@
-import admin from 'firebase-admin';
-import { adminAuth } from './firebase';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { verifyIdToken } from './firebase-admin';
+import { prisma } from './prisma';
 
 export async function syncUserWithDatabase(userRecord: { 
   uid: string, 
@@ -44,7 +41,7 @@ export async function syncUserWithDatabase(userRecord: {
 
 export async function getCurrentUser(token: string) {
   try {
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await verifyIdToken(token);
     return syncUserWithDatabase({
       uid: decodedToken.uid,
       email: decodedToken.email,

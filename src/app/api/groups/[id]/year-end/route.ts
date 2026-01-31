@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { calculateYearEndDistribution } from '@/lib/calculators'
 
 export async function GET(

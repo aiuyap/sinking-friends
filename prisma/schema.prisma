@@ -17,7 +17,8 @@ model User {
   ownedGroups     Group[]   @relation("GroupOwner")
   loans           Loan[]
   coMakerLoans    CoMaker[]
-  notifications    Notification[]
+  notifications   Notification[]
+  sentInvites     Invite[] @relation("CreatedInvites")
 }
 
 model Group {
@@ -30,14 +31,14 @@ model Group {
   termDuration              Int      @default(2)      // months
   termStartDate             DateTime
   termEndDate               DateTime
-  // The group owner is the same as the group creator
+  // The group owner is the same as the group creator (ownerId represents the group creator with full admin rights)
   ownerId                  String
   owner                    User     @relation("GroupOwner", fields: [ownerId], references: [id])
   members                  GroupMember[]
-  // Note: ownerId represents the group creator with full administrative rights
   loans                    Loan[]
-  contributions             Contribution[]
+  contributions            Contribution[]
   settings                 GroupSettings?
+  invites                  Invite[]
   createdAt                DateTime @default(now())
 }
 
@@ -172,4 +173,25 @@ enum NotificationType {
   LOAN_REPAID
   LOAN_DEFAULTED
   YEAR_END_DISTRIBUTION
+}
+
+model Invite {
+  id            String    @id @default(cuid())
+  groupId       String
+  group         Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  email         String
+  token         String    @unique
+  invitedById   String    // Who created the invite
+  invitedBy     User      @relation("CreatedInvites", fields: [invitedById], references: [id])
+  status        InviteStatus @default(PENDING)
+  expiresAt     DateTime
+  createdAt     DateTime  @default(now())
+  
+  @@unique([groupId, email])
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
 }

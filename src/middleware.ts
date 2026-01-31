@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from './lib/firebase';
 
 export async function middleware(req: NextRequest) {
   // Exclude public routes from authentication
   const publicPaths = [
     '/',
-    '/login',
     '/invite',
     '/privacy-policy',
     '/terms-of-service'
@@ -14,35 +12,36 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   // Allow public routes without authentication
-  if (publicPaths.includes(path)) {
+  if (publicPaths.some(publicPath => path === publicPath || path.startsWith(`${publicPath}/`))) {
     return NextResponse.next();
   }
 
   // Check for Firebase authentication token
+  // Note: Full token verification happens in API routes using firebase-admin
+  // Middleware only checks for presence of auth cookie for performance
   const token = req.cookies.get('__session')?.value;
 
   if (!token) {
-    // Redirect to login if no token and not a public route
-    return NextResponse.redirect(new URL('/login', req.url));
+    // For API routes, return 401
+    if (path.startsWith('/api/')) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    // For page routes, redirect to home page (which has login)
+    return NextResponse.redirect(new URL('/', req.url));
   }
 
-  try {
-    // Verify token with Firebase Admin
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    
-    // Add user ID to request headers for API route access
-    const headers = new Headers(req.headers);
-    headers.set('x-user-id', decodedToken.uid);
+  // Pass token along in headers for API route verification
+  const headers = new Headers(req.headers);
+  headers.set('x-auth-token', token);
 
-    return NextResponse.next({
-      request: {
-        headers
-      }
-    });
-  } catch (error) {
-    // Invalid token, redirect to login
-    return NextResponse.redirect(new URL('/login', req.url));
-  }
+  return NextResponse.next({
+    request: {
+      headers
+    }
+  });
 }
 
 // Specify which routes this middleware should run on

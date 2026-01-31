@@ -5,12 +5,14 @@ interface BadgeProps {
   children: React.ReactNode
   variant?: 'default' | 'success' | 'warning' | 'danger' | 'outline'
   className?: string
+  onClick?: () => void
 }
 
 export function Badge({
   children,
   variant = 'default',
   className,
+  onClick
 }: BadgeProps) {
   const variants = {
     default: 'bg-sage-dim text-sage',
@@ -22,9 +24,11 @@ export function Badge({
 
   return (
     <span
+      onClick={onClick}
       className={cn(
         'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold',
         variants[variant],
+        onClick && 'cursor-pointer hover:opacity-80',
         className
       )}
     >
