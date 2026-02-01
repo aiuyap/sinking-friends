@@ -141,11 +141,16 @@ Full page to manage all notifications
 | 4.1 | Create Notification Center page | COMPLETE | `/notifications/page.tsx` |
 | 4.2 | Create NotificationList component | COMPLETE | Filter tabs, mark as read |
 | 4.3 | Add "Mark all as read" endpoint | COMPLETE | Real auth, updates DB |
+| 4.4 | Move NotificationBell to Header | COMPLETE | Moved from sidebar to top-right (Feb 2, 2026) |
 
 ### Files Created
 - `/src/app/notifications/page.tsx`
 - `/src/components/notifications/NotificationList.tsx`
 - `/src/app/api/notifications/read-all/route.ts`
+
+### UI Improvements (Feb 2, 2026)
+- ✅ NotificationBell moved from sidebar to header for better UX
+- ✅ Notification dropdown now accessible from top-right on all pages
 
 ---
 
@@ -205,6 +210,11 @@ Replace mock data with real database queries
 - `/src/app/api/groups/[id]/route.ts`
 - `/src/app/api/groups/[id]/loans/route.ts`
 - `/src/app/api/groups/[id]/members/route.ts`
+
+### UI Improvements (Feb 2, 2026)
+- ✅ Dashboard simplified: removed Stats Grid (4 cards) and Your Groups section
+- ✅ Dashboard now shows only: My Contributions, Active Loans, Payment History
+- ✅ Cleaner, more focused user experience
 
 ---
 

@@ -70,6 +70,8 @@
 | Create Error Page (error.tsx) | ✅ Done | |
 | Final QA - click through all flows | ⏳ Pending | |
 | Add Payment History Card to Dashboard | ✅ Done | Table view with mock data |
+| Simplify Dashboard Layout | ✅ Done | Removed Stats Grid and Your Groups, kept only 3 sections |
+| Move NotificationBell to Header | ✅ Done | Moved from sidebar to top-right of all pages |
 
 ---
 
@@ -132,6 +134,8 @@
 - `/src/components/loans/LoanRequestForm.tsx` - Controlled mode support
 - `/src/components/members/InviteMemberModal.tsx` - Fixed toast variants
 - `/src/hooks/useToast.ts` - Re-exports from Toast.tsx
-- `/src/app/dashboard/page.tsx` - Added full-width Payment History section, removed Quick Actions card, 2-column grid for top cards
+- `/src/app/dashboard/page.tsx` - Simplified to My Contributions, Active Loans, and Payment History only (removed Stats Grid and Your Groups)
 - `/src/app/groups/[id]/page.tsx` - Moved View All Loans button to top beside Request Loan
+- `/src/components/layout/Sidebar.tsx` - Removed NotificationBell
+- `/src/components/layout/Header.tsx` - Added NotificationBell to top-right header
 

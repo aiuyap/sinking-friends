@@ -1,6 +1,7 @@
 import React from 'react'
-import { Bell, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { NotificationBell } from './NotificationBell'
 
 interface HeaderProps {
   title: string
@@ -24,10 +25,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
         </div>
         
         <div className="flex items-center gap-4">
-          <button className="relative p-2 hover:bg-black/[0.03] rounded-lg transition-colors">
-            <Bell className="w-5 h-5 text-charcoal-secondary" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-terracotta rounded-full" />
-          </button>
+          <NotificationBell />
         </div>
       </div>
     </header>
