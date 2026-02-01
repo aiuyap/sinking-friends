@@ -40,6 +40,8 @@ export default function GroupDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
   const [loading, setLoading] = useState(true)
   const [group, setGroup] = useState<any>(null)
+  const [members, setMembers] = useState<any[]>([])
+  const [membersLoading, setMembersLoading] = useState(false)
   const [showLoanModal, setShowLoanModal] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
 
@@ -68,6 +70,32 @@ export default function GroupDetailPage() {
       console.error('Error fetching group:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Fetch members when members tab is active
+  useEffect(() => {
+    if (activeTab === 'members' && groupId) {
+      fetchMembers()
+    }
+  }, [activeTab, groupId])
+
+  const fetchMembers = async () => {
+    try {
+      setMembersLoading(true)
+      const response = await fetch(`/api/groups/${groupId}/members`)
+      if (response.ok) {
+        const data = await response.json()
+        setMembers(data.members || [])
+      } else {
+        console.error('Failed to fetch members:', response.status)
+        setMembers([])
+      }
+    } catch (error) {
+      console.error('Error fetching members:', error)
+      setMembers([])
+    } finally {
+      setMembersLoading(false)
     }
   }
 
@@ -443,9 +471,43 @@ export default function GroupDetailPage() {
                   )}
                 </div>
                 
-                <div className="text-center py-12">
-                  <p className="text-charcoal-muted">Members will be loaded from API in next phase</p>
-                </div>
+                {membersLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage"></div>
+                  </div>
+                ) : members.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="w-16 h-16 text-charcoal-muted mx-auto mb-4" />
+                    <p className="text-charcoal-muted mb-4">No members found</p>
+                    {isAdmin && (
+                      <Button onClick={() => setShowInviteModal(true)}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Invite First Member
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {members.slice(0, 5).map((member, index) => (
+                      <motion.div
+                        key={member.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <MemberCard 
+                          name={member.name}
+                          email={member.email}
+                          avatarUrl={member.avatarUrl}
+                          status={member.status}
+                          contribution={member.contribution}
+                          totalContributions={member.totalContributions}
+                          nextPayday={new Date(member.nextPayday)}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="mt-6 text-center">
                   <Button 
