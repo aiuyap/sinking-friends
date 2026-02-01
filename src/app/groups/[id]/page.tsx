@@ -31,28 +31,6 @@ import { InviteMemberModal } from '@/components/members/InviteMemberModal'
 
 type Tab = 'overview' | 'rules' | 'members' | 'loans' | 'contributions' | 'year-end'
 
-// Mock data for demo
-const mockMembers = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', avatarUrl: '', status: 'active' as const, contribution: 2500, totalContributions: 45000, nextPayday: new Date('2026-02-15') },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', avatarUrl: '', status: 'active' as const, contribution: 3000, totalContributions: 54000, nextPayday: new Date('2026-02-14') },
-  { id: '3', name: 'Bob Johnson', email: 'bob@example.com', avatarUrl: '', status: 'inactive' as const, contribution: 2000, totalContributions: 28000, nextPayday: new Date('2026-02-20') },
-  { id: '4', name: 'Alice Brown', email: 'alice@example.com', avatarUrl: '', status: 'active' as const, contribution: 2500, totalContributions: 37500, nextPayday: new Date('2026-02-15') },
-]
-
-const mockLoans = [
-  { id: '1', amount: 15000, borrowerName: 'John Doe', status: 'APPROVED' as const, interestRate: 5, dueDate: new Date('2026-04-01'), totalInterest: 1500 },
-  { id: '2', amount: 8000, borrowerName: 'Jane Smith', status: 'PENDING' as const, interestRate: 5, dueDate: new Date('2026-05-01'), totalInterest: 800 },
-  { id: '3', amount: 20000, borrowerName: 'External Borrower', status: 'APPROVED' as const, interestRate: 10, dueDate: new Date('2026-03-15'), totalInterest: 4000 },
-]
-
-const mockContributions = [
-  { id: '1', memberName: 'John Doe', amount: 2500, scheduledDate: new Date('2026-02-01'), paidDate: new Date('2026-02-01'), status: 'paid' },
-  { id: '2', memberName: 'Jane Smith', amount: 3000, scheduledDate: new Date('2026-02-01'), paidDate: new Date('2026-02-01'), status: 'paid' },
-  { id: '3', memberName: 'Bob Johnson', amount: 2000, scheduledDate: new Date('2026-02-01'), paidDate: null, status: 'missed' },
-  { id: '4', memberName: 'Alice Brown', amount: 2500, scheduledDate: new Date('2026-02-15'), paidDate: null, status: 'pending' },
-  { id: '5', memberName: 'John Doe', amount: 2500, scheduledDate: new Date('2026-02-15'), paidDate: null, status: 'pending' },
-]
-
 export default function GroupDetailPage() {
   const { user } = useAuth()
   const router = useRouter()
@@ -76,42 +54,18 @@ export default function GroupDetailPage() {
       if (response.ok) {
         const data = await response.json()
         setGroup(data.group)
+      } else if (response.status === 401) {
+        // Not authenticated, redirect to login
+        router.push('/')
+      } else if (response.status === 403) {
+        // No access to this group
+        console.error('No access to this group')
+        // Could show an error message here
       } else {
-        // Use mock data for demo if API fails
-        setGroup({
-          id: groupId,
-          name: 'Family Savings Circle',
-          description: 'Our family sinking fund for emergencies and big purchases',
-          loanInterestRateMember: 5,
-          loanInterestRateNonMember: 10,
-          termDuration: 2,
-          totalPool: 156000,
-          memberCount: 8,
-          totalInterest: 12500,
-          ownerId: user?.uid,
-          settings: {
-            yearEndDate: '2026-12-20'
-          }
-        })
+        console.error('Failed to fetch group:', response.status)
       }
     } catch (error) {
       console.error('Error fetching group:', error)
-      // Use mock data for demo
-      setGroup({
-        id: groupId,
-        name: 'Family Savings Circle',
-        description: 'Our family sinking fund for emergencies and big purchases',
-        loanInterestRateMember: 5,
-        loanInterestRateNonMember: 10,
-        termDuration: 2,
-        totalPool: 156000,
-        memberCount: 8,
-        totalInterest: 12500,
-        ownerId: user?.uid,
-        settings: {
-          yearEndDate: '2026-12-20'
-        }
-      })
     } finally {
       setLoading(false)
     }
@@ -127,7 +81,8 @@ export default function GroupDetailPage() {
     )
   }
 
-  const isAdmin = group?.ownerId === user?.uid
+  // Use isAdmin flag from API response, fallback to comparing ownerId
+  const isAdmin = group?.isAdmin || group?.ownerId === user?.uid || group?.userRole === 'ADMIN'
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'rules', label: 'Rules' },
@@ -137,11 +92,12 @@ export default function GroupDetailPage() {
     ...(isAdmin ? [{ id: 'year-end', label: 'Year-End' }] : []),
   ]
 
+  // Contribution stats - will be loaded from API in next phase
   const contributionStats = {
-    total: mockContributions.length,
-    paid: mockContributions.filter(c => c.status === 'paid').length,
-    pending: mockContributions.filter(c => c.status === 'pending').length,
-    missed: mockContributions.filter(c => c.status === 'missed').length,
+    total: 0,
+    paid: 0,
+    pending: 0,
+    missed: 0,
   }
 
   return (
@@ -260,7 +216,7 @@ export default function GroupDetailPage() {
                         <Users className="w-6 h-6 text-terracotta" />
                       </div>
                       <p className="text-sm text-charcoal-muted mb-1">Total Members</p>
-                      <p className="font-display text-2xl text-charcoal">{group?.memberCount || mockMembers.length}</p>
+                      <p className="font-display text-2xl text-charcoal">{group?.memberCount || 0}</p>
                     </CardContent>
                   </Card>
 
@@ -477,7 +433,7 @@ export default function GroupDetailPage() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="font-display text-2xl text-charcoal">Group Members</h2>
-                    <p className="text-charcoal-muted">{mockMembers.length} members in this group</p>
+                    <p className="text-charcoal-muted">{group?.memberCount || 0} members in this group</p>
                   </div>
                   {isAdmin && (
                     <Button onClick={() => setShowInviteModal(true)} size="sm">
@@ -487,17 +443,8 @@ export default function GroupDetailPage() {
                   )}
                 </div>
                 
-                <div className="grid gap-4">
-                  {mockMembers.map((member, index) => (
-                    <motion.div
-                      key={member.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <MemberCard {...member} />
-                    </motion.div>
-                  ))}
+                <div className="text-center py-12">
+                  <p className="text-charcoal-muted">Members will be loaded from API in next phase</p>
                 </div>
 
                 <div className="mt-6 text-center">
@@ -520,7 +467,7 @@ export default function GroupDetailPage() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="font-display text-2xl text-charcoal">Loans</h2>
-                    <p className="text-charcoal-muted">{mockLoans.length} loans in this group</p>
+                    <p className="text-charcoal-muted">Loans will be loaded from API in next phase</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button 
@@ -536,48 +483,8 @@ export default function GroupDetailPage() {
                   </div>
                 </div>
 
-                {/* Loan Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-sm text-charcoal-muted">Pending</p>
-                      <p className="font-display text-xl text-yellow-600">
-                        {mockLoans.filter(l => l.status === 'PENDING').length}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-sm text-charcoal-muted">Active</p>
-                      <p className="font-display text-xl text-sage">
-                        {mockLoans.filter(l => l.status === 'APPROVED').length}
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-sm text-charcoal-muted">Total Lent</p>
-                      <p className="font-display text-xl text-charcoal">
-                        {formatCurrency(mockLoans.reduce((sum, l) => sum + l.amount, 0))}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <div className="grid gap-4">
-                  {mockLoans.map((loan, index) => (
-                    <motion.div
-                      key={loan.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <LoanCard 
-                        {...loan} 
-                        onViewDetails={(id) => router.push(`/groups/${groupId}/loans/${id}`)}
-                      />
-                    </motion.div>
-                  ))}
+                <div className="text-center py-12">
+                  <p className="text-charcoal-muted">Loans will be loaded from API in next phase</p>
                 </div>
               </motion.div>
             )}
@@ -591,7 +498,7 @@ export default function GroupDetailPage() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="font-display text-2xl text-charcoal">Contributions</h2>
-                    <p className="text-charcoal-muted">Recent contribution activity</p>
+                    <p className="text-charcoal-muted">Contributions will be loaded from API in next phase</p>
                   </div>
                   <Button 
                     variant="outline" 
@@ -601,77 +508,8 @@ export default function GroupDetailPage() {
                   </Button>
                 </div>
 
-                {/* Contribution Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-sm text-charcoal-muted">Total</p>
-                      <p className="font-display text-xl text-charcoal">{contributionStats.total}</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-sm text-charcoal-muted">Paid</p>
-                      <p className="font-display text-xl text-green-600">{contributionStats.paid}</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-sm text-charcoal-muted">Pending</p>
-                      <p className="font-display text-xl text-yellow-600">{contributionStats.pending}</p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <p className="text-sm text-charcoal-muted">Missed</p>
-                      <p className="font-display text-xl text-red-600">{contributionStats.missed}</p>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <div className="space-y-3">
-                  {mockContributions.map((contribution, index) => (
-                    <motion.div
-                      key={contribution.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                contribution.status === 'paid' ? 'bg-green-100' :
-                                contribution.status === 'pending' ? 'bg-yellow-100' : 'bg-red-100'
-                              }`}>
-                                {contribution.status === 'paid' && <CheckCircle className="w-5 h-5 text-green-600" />}
-                                {contribution.status === 'pending' && <Clock className="w-5 h-5 text-yellow-600" />}
-                                {contribution.status === 'missed' && <AlertCircle className="w-5 h-5 text-red-600" />}
-                              </div>
-                              <div>
-                                <p className="font-medium text-charcoal">{contribution.memberName}</p>
-                                <p className="text-sm text-charcoal-muted">
-                                  Due: {formatDate(contribution.scheduledDate)}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-mono text-lg text-charcoal">{formatCurrency(contribution.amount)}</p>
-                              <Badge 
-                                variant={
-                                  contribution.status === 'paid' ? 'success' :
-                                  contribution.status === 'pending' ? 'warning' : 'danger'
-                                }
-                              >
-                                {contribution.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
+                <div className="text-center py-12">
+                  <p className="text-charcoal-muted">Contributions will be loaded from API in next phase</p>
                 </div>
               </motion.div>
             )}
@@ -729,30 +567,8 @@ export default function GroupDetailPage() {
                 <Card>
                   <CardContent className="p-6">
                     <h3 className="font-display text-lg text-charcoal mb-4">Distribution Preview</h3>
-                    <div className="space-y-3">
-                      {mockMembers.slice(0, 3).map((member) => (
-                        <div key={member.id} className="flex items-center justify-between p-3 bg-cream-dim rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-sage flex items-center justify-center text-white text-sm">
-                              {member.name.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="font-medium text-charcoal">{member.name}</p>
-                              <p className="text-sm text-charcoal-muted">
-                                Contributions: {formatCurrency(member.totalContributions)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-mono text-lg text-sage">
-                              {formatCurrency(member.totalContributions + (member.status === 'active' ? 1500 : 0))}
-                            </p>
-                            <p className="text-xs text-charcoal-muted">
-                              {member.status === 'active' ? 'Includes interest share' : 'No interest (inactive)'}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="text-center py-8">
+                      <p className="text-charcoal-muted">Member distribution details will be loaded from API in next phase</p>
                     </div>
                     <p className="text-sm text-charcoal-muted mt-4 text-center">
                       View full report for complete distribution details
