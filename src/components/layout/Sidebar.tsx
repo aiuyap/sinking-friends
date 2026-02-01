@@ -12,6 +12,7 @@ import {
 interface SidebarProps {
   user: any
   onSignOut: () => void
+  mobile?: boolean
 }
 
 const navigation = [
@@ -20,11 +21,16 @@ const navigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
-export function Sidebar({ user, onSignOut }: SidebarProps) {
+export function Sidebar({ user, onSignOut, mobile = false }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:inset-y-0 lg:border-r lg:border-black/[0.06] bg-white">
+    <div className={cn(
+      "flex flex-col bg-white",
+      mobile 
+        ? "w-72 h-full" 
+        : "hidden lg:flex lg:w-72 lg:fixed lg:inset-y-0 lg:border-r lg:border-black/[0.06]"
+    )}>
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center h-20 px-8 border-b border-black/[0.06]">

@@ -54,47 +54,51 @@ function PaymentTable({
 }) {
   return (
     <div className={maxHeight ? `overflow-y-auto ${maxHeight}` : undefined}>
-      {/* Table Header */}
-      <div className="grid grid-cols-12 gap-3 text-xs text-charcoal-muted uppercase tracking-wider font-medium border-b border-black/[0.08] pb-2 sticky top-0 bg-white z-10">
-        <div className="col-span-2">Date</div>
-        <div className="col-span-4">Group</div>
-        <div className="col-span-2">Type</div>
-        <div className="col-span-2 text-right">Amount</div>
-        <div className="col-span-2 text-right">Status</div>
-      </div>
+      <div className="overflow-x-auto">
+        <div className="min-w-[640px]">
+          {/* Table Header */}
+          <div className="grid grid-cols-12 gap-3 text-xs text-charcoal-muted uppercase tracking-wider font-medium border-b border-black/[0.08] pb-2 sticky top-0 bg-white z-10">
+            <div className="col-span-2">Date</div>
+            <div className="col-span-4">Group</div>
+            <div className="col-span-2">Type</div>
+            <div className="col-span-2 text-right">Amount</div>
+            <div className="col-span-2 text-right">Status</div>
+          </div>
 
-      {/* Table Rows */}
-      <div className="space-y-1 pt-1">
-        {data.map((payment) => {
-          const status = statusConfig[payment.status];
-          const StatusIcon = status.icon;
+          {/* Table Rows */}
+          <div className="space-y-1 pt-1">
+            {data.map((payment) => {
+              const status = statusConfig[payment.status];
+              const StatusIcon = status.icon;
 
-          return (
-            <div
-              key={payment.id}
-              className="grid grid-cols-12 gap-3 py-2.5 text-sm hover:bg-black/[0.02] rounded transition-colors items-center border-b border-black/[0.04] last:border-b-0"
-            >
-              <div className="col-span-2 text-charcoal-secondary">
-                {showFullDates ? formatDateFull(payment.date) : formatDateShort(payment.date)}
-              </div>
-              <div className="col-span-4 text-charcoal font-medium truncate" title={payment.groupName}>
-                {payment.groupName}
-              </div>
-              <div className="col-span-2 text-charcoal-secondary">
-                {typeLabels[payment.type]}
-              </div>
-              <div className="col-span-2 text-right font-mono text-charcoal">
-                {formatCurrency(payment.amount)}
-              </div>
-              <div className="col-span-2 text-right">
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                  <StatusIcon className="w-3 h-3" />
-                  {status.label}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+              return (
+                <div
+                  key={payment.id}
+                  className="grid grid-cols-12 gap-3 py-2.5 text-sm hover:bg-black/[0.02] rounded transition-colors items-center border-b border-black/[0.04] last:border-b-0"
+                >
+                  <div className="col-span-2 text-charcoal-secondary">
+                    {showFullDates ? formatDateFull(payment.date) : formatDateShort(payment.date)}
+                  </div>
+                  <div className="col-span-4 text-charcoal font-medium truncate" title={payment.groupName}>
+                    {payment.groupName}
+                  </div>
+                  <div className="col-span-2 text-charcoal-secondary">
+                    {typeLabels[payment.type]}
+                  </div>
+                  <div className="col-span-2 text-right font-mono text-charcoal">
+                    {formatCurrency(payment.amount)}
+                  </div>
+                  <div className="col-span-2 text-right">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                      <StatusIcon className="w-3 h-3" />
+                      {status.label}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

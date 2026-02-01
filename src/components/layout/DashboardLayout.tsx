@@ -29,10 +29,14 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
             className="absolute left-0 top-0 h-full w-72 bg-white"
             onClick={(e) => e.stopPropagation()}
           >
-            <Sidebar user={user} onSignOut={() => {
-              logout()
-              setMobileMenuOpen(false)
-            }} />
+            <Sidebar 
+              user={user} 
+              onSignOut={() => {
+                logout()
+                setMobileMenuOpen(false)
+              }}
+              mobile={true}
+            />
           </div>
         </div>
       )}

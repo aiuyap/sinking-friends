@@ -216,6 +216,7 @@ Replace mock data with real database queries
 - ✅ Dashboard simplified: removed Stats Grid (4 cards) and Your Groups section
 - ✅ Dashboard now shows only: My Contributions, Active Loans, Payment History
 - ✅ Cleaner, more focused user experience
+- ✅ Mobile responsiveness: Sidebar fixed for mobile overlay, tables with horizontal scroll, responsive grids (375px minimum support)
 
 ---
 

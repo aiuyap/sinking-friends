@@ -83,7 +83,7 @@ export function NotificationBell() {
 
       {/* Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-12 w-96 bg-white rounded-xl shadow-lg border border-black/[0.06] z-50">
+        <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white rounded-xl shadow-lg border border-black/[0.06] z-50">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-black/[0.06]">
             <h3 className="font-display text-lg text-charcoal">Notifications</h3>

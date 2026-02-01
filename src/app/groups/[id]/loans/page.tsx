@@ -226,65 +226,67 @@ export default function LoanListPage() {
         ) : (
           <Card>
             <div className="overflow-x-auto">
-              {/* Table Header */}
-              <div className="grid grid-cols-12 gap-3 px-6 py-3 text-xs text-charcoal-muted uppercase tracking-wider font-medium border-b border-black/[0.08] bg-gray-50/50">
-                <div className="col-span-2">Borrower</div>
-                <div className="col-span-2 text-right">Amount</div>
-                <div className="col-span-1 text-center">Rate</div>
-                <div className="col-span-2 text-right">Total Due</div>
-                <div className="col-span-2">Due Date</div>
-                <div className="col-span-2">Status</div>
-                <div className="col-span-1 text-right">Action</div>
-              </div>
+              <div className="min-w-[640px]">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-3 px-6 py-3 text-xs text-charcoal-muted uppercase tracking-wider font-medium border-b border-black/[0.08] bg-gray-50/50">
+                  <div className="col-span-2">Borrower</div>
+                  <div className="col-span-2 text-right">Amount</div>
+                  <div className="col-span-1 text-center">Rate</div>
+                  <div className="col-span-2 text-right">Total Due</div>
+                  <div className="col-span-2">Due Date</div>
+                  <div className="col-span-2">Status</div>
+                  <div className="col-span-1 text-right">Action</div>
+                </div>
 
-              {/* Table Rows */}
-              <div className="divide-y divide-black/[0.04]">
-                {filteredLoans.map((loan, index) => {
-                  const status = statusVariants[loan.status];
-                  const StatusIcon = status.icon;
-                  const totalDue = loan.amount + loan.totalInterest;
+                {/* Table Rows */}
+                <div className="divide-y divide-black/[0.04]">
+                  {filteredLoans.map((loan, index) => {
+                    const status = statusVariants[loan.status];
+                    const StatusIcon = status.icon;
+                    const totalDue = loan.amount + loan.totalInterest;
 
-                  return (
-                    <motion.div
-                      key={loan.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="grid grid-cols-12 gap-3 px-6 py-4 text-sm items-center hover:bg-black/[0.02] transition-colors"
-                    >
-                      <div className="col-span-2">
-                        <p className="font-medium text-charcoal">{loan.borrowerName}</p>
-                      </div>
-                      <div className="col-span-2 text-right font-mono text-charcoal">
-                        {formatCurrency(loan.amount)}
-                      </div>
-                      <div className="col-span-1 text-center text-charcoal-secondary">
-                        {loan.interestRate}%
-                      </div>
-                      <div className="col-span-2 text-right font-mono text-charcoal">
-                        {formatCurrency(totalDue)}
-                      </div>
-                      <div className="col-span-2 text-charcoal-secondary">
-                        {loan.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </div>
-                      <div className="col-span-2">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                          <StatusIcon className="w-3 h-3" />
-                          {loan.status.charAt(0) + loan.status.slice(1).toLowerCase()}
-                        </span>
-                      </div>
-                      <div className="col-span-1 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewLoanDetails(loan.id)}
-                        >
-                          View
-                        </Button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                    return (
+                      <motion.div
+                        key={loan.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="grid grid-cols-12 gap-3 px-6 py-4 text-sm items-center hover:bg-black/[0.02] transition-colors"
+                      >
+                        <div className="col-span-2">
+                          <p className="font-medium text-charcoal">{loan.borrowerName}</p>
+                        </div>
+                        <div className="col-span-2 text-right font-mono text-charcoal">
+                          {formatCurrency(loan.amount)}
+                        </div>
+                        <div className="col-span-1 text-center text-charcoal-secondary">
+                          {loan.interestRate}%
+                        </div>
+                        <div className="col-span-2 text-right font-mono text-charcoal">
+                          {formatCurrency(totalDue)}
+                        </div>
+                        <div className="col-span-2 text-charcoal-secondary">
+                          {loan.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                        <div className="col-span-2">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                            <StatusIcon className="w-3 h-3" />
+                            {loan.status.charAt(0) + loan.status.slice(1).toLowerCase()}
+                          </span>
+                        </div>
+                        <div className="col-span-1 text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewLoanDetails(loan.id)}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </Card>

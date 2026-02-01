@@ -602,7 +602,7 @@ export default function GroupDetailPage() {
                 </div>
 
                 {/* Contribution Stats */}
-                <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <Card>
                     <CardContent className="p-4 text-center">
                       <p className="text-sm text-charcoal-muted">Total</p>

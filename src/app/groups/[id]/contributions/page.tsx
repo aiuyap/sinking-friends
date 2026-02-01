@@ -201,58 +201,60 @@ export default function GroupContributionsPage() {
         ) : (
           <Card>
             <div className="overflow-x-auto">
-              {/* Table Header */}
-              <div className="grid grid-cols-12 gap-3 px-6 py-3 text-xs text-charcoal-muted uppercase tracking-wider font-medium border-b border-black/[0.08] bg-gray-50/50">
-                <div className="col-span-3">Member</div>
-                <div className="col-span-3">Scheduled Date</div>
-                <div className="col-span-2 text-right">Amount</div>
-                <div className="col-span-2">Status</div>
-                <div className="col-span-2 text-right">Action</div>
-              </div>
+              <div className="min-w-[640px]">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-3 px-6 py-3 text-xs text-charcoal-muted uppercase tracking-wider font-medium border-b border-black/[0.08] bg-gray-50/50">
+                  <div className="col-span-3">Member</div>
+                  <div className="col-span-3">Scheduled Date</div>
+                  <div className="col-span-2 text-right">Amount</div>
+                  <div className="col-span-2">Status</div>
+                  <div className="col-span-2 text-right">Action</div>
+                </div>
 
-              {/* Table Rows */}
-              <div className="divide-y divide-black/[0.04]">
-                {contributions.map((contribution, index) => {
-                  const status = getStatusConfig(contribution)
-                  const StatusIcon = status.icon
+                {/* Table Rows */}
+                <div className="divide-y divide-black/[0.04]">
+                  {contributions.map((contribution, index) => {
+                    const status = getStatusConfig(contribution)
+                    const StatusIcon = status.icon
 
-                  return (
-                    <motion.div
-                      key={contribution.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="grid grid-cols-12 gap-3 px-6 py-4 text-sm items-center hover:bg-black/[0.02] transition-colors"
-                    >
-                      <div className="col-span-3">
-                        <p className="font-medium text-charcoal">{contribution.memberName}</p>
-                      </div>
-                      <div className="col-span-3 text-charcoal-secondary">
-                        {formatDate(new Date(contribution.scheduledDate))}
-                      </div>
-                      <div className="col-span-2 text-right font-mono text-charcoal">
-                        {formatCurrency(contribution.amount)}
-                      </div>
-                      <div className="col-span-2">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                          <StatusIcon className="w-3 h-3" />
-                          {status.label}
-                        </span>
-                      </div>
-                      <div className="col-span-2 text-right">
-                        {!contribution.paidDate && !contribution.isMissed && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleMarkAsPaid(contribution.id)}
-                          >
-                            Mark Paid
-                          </Button>
-                        )}
-                      </div>
-                    </motion.div>
-                  )
-                })}
+                    return (
+                      <motion.div
+                        key={contribution.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="grid grid-cols-12 gap-3 px-6 py-4 text-sm items-center hover:bg-black/[0.02] transition-colors"
+                      >
+                        <div className="col-span-3">
+                          <p className="font-medium text-charcoal">{contribution.memberName}</p>
+                        </div>
+                        <div className="col-span-3 text-charcoal-secondary">
+                          {formatDate(new Date(contribution.scheduledDate))}
+                        </div>
+                        <div className="col-span-2 text-right font-mono text-charcoal">
+                          {formatCurrency(contribution.amount)}
+                        </div>
+                        <div className="col-span-2">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                            <StatusIcon className="w-3 h-3" />
+                            {status.label}
+                          </span>
+                        </div>
+                        <div className="col-span-2 text-right">
+                          {!contribution.paidDate && !contribution.isMissed && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleMarkAsPaid(contribution.id)}
+                            >
+                              Mark Paid
+                            </Button>
+                          )}
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </Card>

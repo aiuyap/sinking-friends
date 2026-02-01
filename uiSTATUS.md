@@ -64,7 +64,7 @@
 | Task | Status | Notes |
 |------|--------|-------|
 | Add Breadcrumbs to nested pages | ⏳ Pending | |
-| Fix Mobile Responsiveness | ⏳ Pending | |
+| Fix Mobile Responsiveness | ✅ Done | Sidebar mobile prop, table horizontal scrolling, responsive grids, 375px minimum support |
 | Add Page Transitions | ⏳ Pending | |
 | Create 404 Page (not-found.tsx) | ✅ Done | |
 | Create Error Page (error.tsx) | ✅ Done | |
@@ -136,6 +136,12 @@
 - `/src/hooks/useToast.ts` - Re-exports from Toast.tsx
 - `/src/app/dashboard/page.tsx` - Simplified to My Contributions, Active Loans, and Payment History only (removed Stats Grid and Your Groups)
 - `/src/app/groups/[id]/page.tsx` - Moved View All Loans button to top beside Request Loan
-- `/src/components/layout/Sidebar.tsx` - Removed NotificationBell
+- `/src/components/layout/Sidebar.tsx` - Removed NotificationBell, added mobile prop for responsive mobile overlay
 - `/src/components/layout/Header.tsx` - Added NotificationBell to top-right header
+- `/src/components/layout/DashboardLayout.tsx` - Pass mobile={true} prop to Sidebar in mobile overlay
+- `/src/app/groups/[id]/page.tsx` - Fixed contribution stats grid (grid-cols-2 md:grid-cols-4)
+- `/src/app/groups/[id]/loans/page.tsx` - Added overflow-x-auto with min-w-[640px] for mobile table scrolling
+- `/src/app/groups/[id]/contributions/page.tsx` - Added overflow-x-auto with min-w-[640px] for mobile table scrolling
+- `/src/components/dashboard/PaymentHistoryCard.tsx` - Added overflow-x-auto for mobile table scrolling
+- `/src/components/layout/NotificationBell.tsx` - Fixed dropdown width for mobile (w-80 sm:w-96)
 
