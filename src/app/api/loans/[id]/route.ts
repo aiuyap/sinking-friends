@@ -1,124 +1,269 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { getCurrentUser, isGroupAdmin } from '@/lib/auth'
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id: groupId } = await params
-    const body = await request.json()
-    const { amount, isNonMember, nonMemberName, coMakerId } = body
-
-    const userId = request.headers.get('x-user-id') || 'mock-user-id'
-
-    const group = await prisma.group.findUnique({ where: { id: groupId } })
-
-    if (!group) {
-      return NextResponse.json({ error: 'Group not found' }, { status: 404 })
-    }
-
-    const member = await prisma.groupMember.findUnique({
-      where: { groupId_userId: { groupId, userId } },
-    })
-
-    if (!member) {
-      return NextResponse.json({ error: 'Not a member of this group' }, { status: 403 })
-    }
-
-    if (!member.isActive) {
-      return NextResponse.json({ error: 'Member is not eligible (inactive)' }, { status: 403 })
-    }
-
-    const activeLoans = await prisma.loan.findMany({
-      where: { borrowerId: userId, status: { in: ['APPROVED', 'PENDING'] } },
-    })
-
-    if (activeLoans.length > 0) {
-      return NextResponse.json({ error: 'Member already has an active loan' }, { status: 403 })
-    }
-
-    const interestRate = isNonMember ? group.loanInterestRateNonMember : group.loanInterestRateMember
-    const totalInterest = (amount * interestRate / 100) * group.termDuration
-
-    const approvedDate = new Date()
-    const dueDate = new Date(approvedDate)
-    dueDate.setMonth(dueDate.getMonth() + group.termDuration)
-
-    const loan = await prisma.loan.create({
-      data: {
-        groupId,
-        borrowerId: userId,
-        isNonMember,
-        nonMemberName: isNonMember ? nonMemberName : null,
-        amount,
-        interestRate,
-        totalInterest,
-        termMonths: group.termDuration,
-        status: 'PENDING',
-        approvedDate,
-        dueDate,
-      },
-    })
-
-    if (coMakerId) {
-      await prisma.coMaker.create({ data: { loanId: loan.id, userId: coMakerId } })
-    }
-
-    await prisma.notification.create({
-      data: {
-        userId: group.ownerId,
-        type: 'LOAN_APPROVED',
-        title: 'New Loan Request',
-        message: `Loan request of ${amount} from ${isNonMember ? nonMemberName : 'a member'}.`,
-        actionUrl: `/groups/${groupId}/loans/${loan.id}`,
-      },
-    })
-
-    if (coMakerId) {
-      await prisma.notification.create({
-          data: {
-            userId: coMakerId,
-            type: 'LOAN_APPROVED',
-          title: 'You Have Been Added as Co-Maker',
-          message: `You have been selected as co-maker for a loan.`,
-          actionUrl: `/groups/${groupId}/loans/${loan.id}`,
-        },
-      })
-    }
-
-    return NextResponse.json({ loan }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating loan:', error)
-    return NextResponse.json({ error: 'Failed to create loan' }, { status: 500 })
-  }
-}
-
+// GET /api/loans/[id] - Get loan details
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: groupId } = await params
+    const { id: loanId } = await params;
 
-    const loans = await prisma.loan.findMany({
-      where: { groupId },
+    // Get the session cookie
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session');
+
+    if (!sessionCookie?.value) {
+      return NextResponse.json(
+        { error: 'No session cookie found' },
+        { status: 401 }
+      );
+    }
+
+    // Verify the token and get user
+    const user = await getCurrentUser(sessionCookie.value);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    // Fetch loan with all related data
+    const loan = await prisma.loan.findUnique({
+      where: { id: loanId },
       include: {
-        borrower: { select: { id: true, name: true, image: true } },
+        group: true,
+        borrower: { select: { id: true, name: true, email: true, image: true } },
         coMakers: { include: { user: { select: { id: true, name: true, image: true } } } },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+        repayments: { orderBy: { paymentDate: 'desc' } }
+      }
+    });
 
-    return NextResponse.json({ loans })
+    if (!loan) {
+      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+    }
+
+    // Check if user has access to this loan (member of group or admin)
+    const membership = await prisma.groupMember.findUnique({
+      where: {
+        groupId_userId: {
+          groupId: loan.groupId,
+          userId: user.id
+        }
+      }
+    });
+
+    const isAdmin = await isGroupAdmin(user.id, loan.groupId);
+    const isBorrower = loan.borrowerId === user.id;
+    const isCoMaker = loan.coMakers.some(cm => cm.userId === user.id);
+
+    if (!membership && !isAdmin && !isBorrower && !isCoMaker) {
+      return NextResponse.json(
+        { error: 'You do not have access to this loan' },
+        { status: 403 }
+      );
+    }
+
+    // Calculate repayment stats
+    const totalRepaid = loan.repayments.reduce((sum, r) => sum + r.amount, 0);
+    const totalDue = loan.amount + loan.totalInterest;
+    const remainingBalance = Math.max(0, totalDue - totalRepaid);
+
+    // Format the response
+    const formattedLoan = {
+      id: loan.id,
+      amount: loan.amount,
+      interestRate: loan.interestRate,
+      totalInterest: loan.totalInterest,
+      termMonths: loan.termMonths,
+      status: loan.status,
+      totalDue,
+      dueDate: loan.dueDate,
+      approvedDate: loan.approvedDate,
+      createdAt: loan.createdAt,
+      
+      // Borrower info
+      borrowerId: loan.borrowerId,
+      borrowerName: loan.isNonMember 
+        ? loan.nonMemberName 
+        : (loan.borrower?.name || 'Unknown'),
+      borrowerEmail: loan.isNonMember ? null : loan.borrower?.email,
+      borrowerAvatar: loan.isNonMember ? null : loan.borrower?.image,
+      isNonMember: loan.isNonMember,
+      
+      // Group info
+      groupId: loan.groupId,
+      groupName: loan.group.name,
+      
+      // Co-makers
+      coMakers: loan.coMakers.map(cm => ({
+        id: cm.userId,
+        name: cm.user?.name || 'Unknown',
+        avatar: cm.user?.image
+      })),
+      
+      // Repayments
+      repayments: loan.repayments.map(r => ({
+        id: r.id,
+        amount: r.amount,
+        interest: r.interest,
+        principal: r.principal,
+        paymentDate: r.paymentDate,
+        note: r.note
+      })),
+      
+      // Calculated fields
+      totalRepaid,
+      remainingBalance,
+      progress: totalDue > 0 ? Math.min(100, (totalRepaid / totalDue) * 100) : 0,
+      
+      // Permissions
+      isMyLoan: isBorrower,
+      isCoMaker,
+      canApprove: isAdmin && loan.status === 'PENDING',
+      canRepay: (isBorrower || isAdmin) && loan.status === 'APPROVED' && remainingBalance > 0,
+      canEdit: isAdmin && loan.status === 'PENDING'
+    };
+
+    return NextResponse.json({ loan: formattedLoan });
   } catch (error) {
-    console.error('Error fetching loans:', error)
-    return NextResponse.json({ error: 'Failed to fetch loans' }, { status: 500 })
+    console.error('Error fetching loan:', error);
+    return NextResponse.json({ error: 'Failed to fetch loan' }, { status: 500 });
   }
 }
 
+// POST /api/loans/[id] - Create repayment
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: loanId } = await params
+    const body = await request.json()
+    const { amount, note, action } = body
+
+    // Get the session cookie
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session');
+
+    if (!sessionCookie?.value) {
+      return NextResponse.json(
+        { error: 'No session cookie found' },
+        { status: 401 }
+      );
+    }
+
+    // Verify the token and get user
+    const user = await getCurrentUser(sessionCookie.value);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    // Fetch loan
+    const loan = await prisma.loan.findUnique({
+      where: { id: loanId },
+      include: {
+        group: true,
+        repayments: true,
+        coMakers: true
+      }
+    });
+
+    if (!loan) {
+      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+    }
+
+    // Check permissions
+    const isAdmin = await isGroupAdmin(user.id, loan.groupId);
+    const isBorrower = loan.borrowerId === user.id;
+
+    if (!isAdmin && !isBorrower) {
+      return NextResponse.json(
+        { error: 'You do not have permission to modify this loan' },
+        { status: 403 }
+      );
+    }
+
+    // Handle repayment
+    if (action === 'repay') {
+      if (loan.status !== 'APPROVED') {
+        return NextResponse.json({ error: 'Loan is not active' }, { status: 400 });
+      }
+
+      const totalRepaid = loan.repayments.reduce((sum, r) => sum + r.amount, 0);
+      const totalDue = loan.amount + loan.totalInterest;
+      const remaining = totalDue - totalRepaid;
+
+      if (amount <= 0 || amount > remaining) {
+        return NextResponse.json({ error: 'Invalid repayment amount' }, { status: 400 });
+      }
+
+      // Calculate interest and principal portions
+      const interestPortion = Math.min(amount, loan.totalInterest - loan.repayments.reduce((sum, r) => sum + r.interest, 0));
+      const principalPortion = amount - interestPortion;
+
+      // Create repayment record
+      const repayment = await prisma.loanRepayment.create({
+        data: {
+          loanId,
+          amount,
+          interest: interestPortion,
+          principal: principalPortion,
+          paymentDate: new Date(),
+          note: note || null
+        }
+      });
+
+      // Check if fully repaid
+      const newTotalRepaid = totalRepaid + amount;
+      if (newTotalRepaid >= totalDue) {
+        await prisma.loan.update({
+          where: { id: loanId },
+          data: { 
+            status: 'REPAID',
+            isFullyRepaid: true,
+            repaidAmount: newTotalRepaid
+          }
+        });
+
+        // Send notification
+        await prisma.notification.create({
+          data: {
+            userId: loan.borrowerId,
+            type: 'LOAN_REPAID',
+            title: 'Loan Fully Repaid',
+            message: `Your loan of ₱${loan.amount} has been fully repaid`,
+            actionUrl: `/groups/${loan.groupId}/loans/${loanId}`
+          }
+        });
+      } else {
+        await prisma.loan.update({
+          where: { id: loanId },
+          data: { repaidAmount: newTotalRepaid }
+        });
+      }
+
+      return NextResponse.json({ repayment, message: 'Repayment recorded successfully' });
+    }
+
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  } catch (error) {
+    console.error('Error processing loan:', error);
+    return NextResponse.json({ error: 'Failed to process loan' }, { status: 500 });
+  }
+}
+
+// PUT /api/loans/[id] - Approve or reject loan
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -126,34 +271,70 @@ export async function PUT(
     const body = await request.json()
     const { action, rejectionReason } = body
 
+    // Get the session cookie
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('__session');
+
+    if (!sessionCookie?.value) {
+      return NextResponse.json(
+        { error: 'No session cookie found' },
+        { status: 401 }
+      );
+    }
+
+    // Verify the token and get user
+    const user = await getCurrentUser(sessionCookie.value);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    // Fetch loan
     const loan = await prisma.loan.findUnique({
       where: { id: loanId },
-      include: { group: true, coMakers: true },
-    })
+      include: { group: true, coMakers: true }
+    });
 
     if (!loan) {
-      return NextResponse.json({ error: 'Loan not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Loan not found' }, { status: 404 });
+    }
+
+    // Check if user is admin
+    const isAdmin = await isGroupAdmin(user.id, loan.groupId);
+
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Only group admins can approve or reject loans' },
+        { status: 403 }
+      );
     }
 
     if (loan.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Loan is not pending' }, { status: 400 })
+      return NextResponse.json({ error: 'Loan is not pending' }, { status: 400 });
     }
 
     if (action === 'approve') {
       const updatedLoan = await prisma.loan.update({
         where: { id: loanId },
-        data: { status: 'APPROVED', adminApprovedAt: new Date() },
-      })
+        data: { 
+          status: 'APPROVED', 
+          adminApprovalId: user.id,
+          adminApprovedAt: new Date() 
+        },
+      });
 
       await prisma.notification.create({
         data: {
           userId: loan.borrowerId,
           type: 'LOAN_APPROVED',
           title: 'Loan Approved',
-          message: `Your loan of ${loan.amount} has been approved.`,
+          message: `Your loan of ₱${loan.amount} has been approved`,
           actionUrl: `/groups/${loan.groupId}/loans/${loanId}`,
         },
-      })
+      });
 
       for (const coMaker of loan.coMakers) {
         await prisma.notification.create({
@@ -161,18 +342,18 @@ export async function PUT(
             userId: coMaker.userId,
             type: 'LOAN_APPROVED',
             title: 'Co-Maker Loan Approved',
-            message: `A loan you are co-making for has been approved.`,
+            message: `A loan you are co-making for has been approved`,
             actionUrl: `/groups/${loan.groupId}/loans/${loanId}`,
           },
-        })
+        });
       }
 
-      return NextResponse.json({ loan: updatedLoan })
+      return NextResponse.json({ loan: updatedLoan });
     } else if (action === 'reject') {
       const updatedLoan = await prisma.loan.update({
         where: { id: loanId },
         data: { status: 'REJECTED' },
-      })
+      });
 
       await prisma.notification.create({
         data: {
@@ -182,7 +363,7 @@ export async function PUT(
           message: `Your loan request has been rejected.${rejectionReason ? ` Reason: ${rejectionReason}` : ''}`,
           actionUrl: `/groups/${loan.groupId}`,
         },
-      })
+      });
 
       for (const coMaker of loan.coMakers) {
         await prisma.notification.create({
@@ -190,18 +371,18 @@ export async function PUT(
             userId: coMaker.userId,
             type: 'LOAN_REJECTED',
             title: 'Co-Maker Loan Rejected',
-            message: `A loan you were co-making for has been rejected.`,
+            message: `A loan you were co-making for has been rejected`,
             actionUrl: `/groups/${loan.groupId}`,
           },
-        })
+        });
       }
 
-      return NextResponse.json({ loan: updatedLoan })
+      return NextResponse.json({ loan: updatedLoan });
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    console.error('Error updating loan:', error)
-    return NextResponse.json({ error: 'Failed to update loan' }, { status: 500 })
+    console.error('Error updating loan:', error);
+    return NextResponse.json({ error: 'Failed to update loan' }, { status: 500 });
   }
 }

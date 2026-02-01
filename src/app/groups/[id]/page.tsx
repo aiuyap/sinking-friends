@@ -22,7 +22,8 @@ import {
   UserPlus,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  XCircle
 } from 'lucide-react'
 import LoanRequestForm from '@/components/loans/LoanRequestForm'
 import { MemberCard } from '@/components/members/MemberCard'
@@ -42,6 +43,10 @@ export default function GroupDetailPage() {
   const [group, setGroup] = useState<any>(null)
   const [members, setMembers] = useState<any[]>([])
   const [membersLoading, setMembersLoading] = useState(false)
+  const [loans, setLoans] = useState<any[]>([])
+  const [loansLoading, setLoansLoading] = useState(false)
+  const [contributions, setContributions] = useState<any[]>([])
+  const [contributionsLoading, setContributionsLoading] = useState(false)
   const [showLoanModal, setShowLoanModal] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
 
@@ -96,6 +101,58 @@ export default function GroupDetailPage() {
       setMembers([])
     } finally {
       setMembersLoading(false)
+    }
+  }
+
+  // Fetch loans when loans tab is active
+  useEffect(() => {
+    if (activeTab === 'loans' && groupId) {
+      fetchLoans()
+    }
+  }, [activeTab, groupId])
+
+  const fetchLoans = async () => {
+    try {
+      setLoansLoading(true)
+      const response = await fetch(`/api/groups/${groupId}/loans`)
+      if (response.ok) {
+        const data = await response.json()
+        setLoans(data.loans || [])
+      } else {
+        console.error('Failed to fetch loans:', response.status)
+        setLoans([])
+      }
+    } catch (error) {
+      console.error('Error fetching loans:', error)
+      setLoans([])
+    } finally {
+      setLoansLoading(false)
+    }
+  }
+
+  // Fetch contributions when contributions tab is active
+  useEffect(() => {
+    if (activeTab === 'contributions' && groupId) {
+      fetchContributions()
+    }
+  }, [activeTab, groupId])
+
+  const fetchContributions = async () => {
+    try {
+      setContributionsLoading(true)
+      const response = await fetch(`/api/groups/${groupId}/contributions`)
+      if (response.ok) {
+        const data = await response.json()
+        setContributions(data.contributions || [])
+      } else {
+        console.error('Failed to fetch contributions:', response.status)
+        setContributions([])
+      }
+    } catch (error) {
+      console.error('Error fetching contributions:', error)
+      setContributions([])
+    } finally {
+      setContributionsLoading(false)
     }
   }
 
@@ -529,7 +586,7 @@ export default function GroupDetailPage() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="font-display text-2xl text-charcoal">Loans</h2>
-                    <p className="text-charcoal-muted">Loans will be loaded from API in next phase</p>
+                    <p className="text-charcoal-muted">{loans.length} loan{loans.length !== 1 ? 's' : ''} in this group</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button 
@@ -545,9 +602,76 @@ export default function GroupDetailPage() {
                   </div>
                 </div>
 
-                <div className="text-center py-12">
-                  <p className="text-charcoal-muted">Loans will be loaded from API in next phase</p>
-                </div>
+                {loansLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage"></div>
+                  </div>
+                ) : loans.length === 0 ? (
+                  <div className="text-center py-12">
+                    <DollarSign className="w-16 h-16 text-charcoal-muted mx-auto mb-4" />
+                    <p className="text-charcoal-muted mb-4">No loans yet</p>
+                    <Button onClick={() => setShowLoanModal(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Request First Loan
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {loans.slice(0, 5).map((loan, index) => {
+                      const statusLookup = {
+                        PENDING: { color: 'text-yellow-600 bg-yellow-50', icon: Clock, label: 'Pending' },
+                        APPROVED: { color: 'text-sage bg-sage/10', icon: DollarSign, label: 'Active' },
+                        REPAID: { color: 'text-green-600 bg-green-50', icon: CheckCircle, label: 'Repaid' },
+                        DEFAULTED: { color: 'text-red-600 bg-red-50', icon: AlertCircle, label: 'Defaulted' },
+                        REJECTED: { color: 'text-red-600 bg-red-50', icon: XCircle, label: 'Rejected' }
+                      } as const;
+                      const statusConfig = statusLookup[loan.status as keyof typeof statusLookup] || { color: 'text-charcoal bg-gray-100', icon: DollarSign, label: loan.status };
+                      const StatusIcon = statusConfig.icon;
+                      
+                      return (
+                        <motion.div
+                          key={loan.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${statusConfig.color}`}>
+                                    <StatusIcon className="w-5 h-5" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-charcoal">{loan.borrowerName}</p>
+                                    <p className="text-sm text-charcoal-muted">
+                                      Due: {loan.dueDate ? new Date(loan.dueDate).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-mono text-lg text-charcoal">{formatCurrency(loan.amount)}</p>
+                                  <div className="flex items-center gap-2 justify-end">
+                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                                      {statusConfig.label}
+                                    </span>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => router.push(`/groups/${groupId}/loans/${loan.id}`)}
+                                    >
+                                      View
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -560,7 +684,7 @@ export default function GroupDetailPage() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="font-display text-2xl text-charcoal">Contributions</h2>
-                    <p className="text-charcoal-muted">Contributions will be loaded from API in next phase</p>
+                    <p className="text-charcoal-muted">{contributions.length} contribution{contributions.length !== 1 ? 's' : ''}</p>
                   </div>
                   <Button 
                     variant="outline" 
@@ -570,8 +694,71 @@ export default function GroupDetailPage() {
                   </Button>
                 </div>
 
-                <div className="text-center py-12">
-                  <p className="text-charcoal-muted">Contributions will be loaded from API in next phase</p>
+                {contributionsLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage"></div>
+                  </div>
+                ) : contributions.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Calendar className="w-16 h-16 text-charcoal-muted mx-auto mb-4" />
+                    <p className="text-charcoal-muted mb-4">No contributions yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {contributions.slice(0, 5).map((contribution, index) => {
+                      let statusConfig
+                      if (contribution.paidDate) {
+                        statusConfig = { color: 'text-green-600 bg-green-50', icon: CheckCircle, label: 'Paid' }
+                      } else if (contribution.isMissed) {
+                        statusConfig = { color: 'text-red-600 bg-red-50', icon: AlertCircle, label: 'Missed' }
+                      } else {
+                        statusConfig = { color: 'text-yellow-600 bg-yellow-50', icon: Clock, label: 'Pending' }
+                      }
+                      const StatusIcon = statusConfig.icon
+
+                      return (
+                        <motion.div
+                          key={contribution.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${statusConfig.color}`}>
+                                    <StatusIcon className="w-5 h-5" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-charcoal">{contribution.memberName}</p>
+                                    <p className="text-sm text-charcoal-muted">
+                                      Scheduled: {contribution.scheduledDate ? new Date(contribution.scheduledDate).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-mono text-lg text-charcoal">{formatCurrency(contribution.amount)}</p>
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                                    {statusConfig.label}
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <div className="mt-6 text-center">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => router.push(`/groups/${groupId}/contributions`)}
+                  >
+                    View All Contributions
+                  </Button>
                 </div>
               </motion.div>
             )}

@@ -8,6 +8,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { useToast } from '@/components/ui/Toast'
 import { 
   User, 
   Bell, 
@@ -21,6 +22,7 @@ import {
 export default function SettingsPage() {
   const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
+  const { success } = useToast()
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'security'>('profile')
   
@@ -51,15 +53,14 @@ export default function SettingsPage() {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000))
     setSaving(false)
-    // TODO: Show toast notification
-    alert('Profile saved!')
+    success('Profile Saved', 'Your profile has been updated successfully.')
   }
 
   const handleSaveNotifications = async () => {
     setSaving(true)
     await new Promise(resolve => setTimeout(resolve, 1000))
     setSaving(false)
-    alert('Notification preferences saved!')
+    success('Preferences Saved', 'Your notification preferences have been updated.')
   }
 
   const handleLogout = async () => {

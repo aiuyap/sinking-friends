@@ -3,33 +3,36 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { useAuth } from '@/hooks/useAuth'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, TextArea } from '@/components/ui/Input'
+import { useToast } from '@/components/ui/Toast'
 import { 
   ArrowLeft, 
   Settings, 
   DollarSign, 
   Calendar,
-  Percent,
   Clock,
   AlertTriangle,
   Trash2,
-  Save
+  Save,
+  CheckCircle
 } from 'lucide-react'
 
 export default function GroupSettingsPage() {
-  const { user } = useAuth()
   const router = useRouter()
   const params = useParams()
   const groupId = params.id as string
+  const { success, error, warning } = useToast()
   
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [group, setGroup] = useState<any>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState(false)
   
   // Form state
   const [formData, setFormData] = useState({
@@ -49,30 +52,36 @@ export default function GroupSettingsPage() {
   const fetchGroupData = async () => {
     try {
       setLoading(true)
-      // For demo, use mock data
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const mockGroup = {
-        id: groupId,
-        name: 'Family Savings Circle',
-        description: 'Our family sinking fund for emergencies and big purchases',
-        loanInterestRateMember: 5,
-        loanInterestRateNonMember: 10,
-        termDuration: 2,
-        ownerId: user?.uid,
-        settings: {
-          gracePeriodDays: 7,
-          yearEndDate: '2026-12-20'
-        }
+      const response = await fetch(`/api/groups/${groupId}`)
+      
+      if (response.status === 401) {
+        router.push('/')
+        return
       }
-      setGroup(mockGroup)
+      
+      if (response.status === 403) {
+        // Not a member or admin
+        console.error('Access denied to group')
+        return
+      }
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch group')
+      }
+      
+      const data = await response.json()
+      setGroup(data.group)
+      
+      // Initialize form data from group
       setFormData({
-        name: mockGroup.name,
-        description: mockGroup.description || '',
-        loanInterestRateMember: mockGroup.loanInterestRateMember,
-        loanInterestRateNonMember: mockGroup.loanInterestRateNonMember,
-        termDuration: mockGroup.termDuration,
-        gracePeriodDays: mockGroup.settings?.gracePeriodDays || 7,
-        yearEndDate: mockGroup.settings?.yearEndDate || '',
+        name: data.group.name || '',
+        description: data.group.description || '',
+        loanInterestRateMember: data.group.loanInterestRateMember || 5,
+        loanInterestRateNonMember: data.group.loanInterestRateNonMember || 10,
+        termDuration: data.group.termDuration || 2,
+        gracePeriodDays: data.group.settings?.gracePeriodDays || 7,
+        yearEndDate: data.group.settings?.yearEndDate ? 
+          new Date(data.group.settings.yearEndDate).toISOString().split('T')[0] : '',
       })
     } catch (error) {
       console.error('Error fetching group:', error)
@@ -83,20 +92,78 @@ export default function GroupSettingsPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setSaving(false)
-    alert('Settings saved successfully!')
+    setSaveSuccess(false)
+    
+    try {
+      const response = await fetch(`/api/groups/${groupId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          loanInterestRateMember: formData.loanInterestRateMember,
+          loanInterestRateNonMember: formData.loanInterestRateNonMember,
+          termDuration: formData.termDuration,
+          settings: {
+            gracePeriodDays: formData.gracePeriodDays,
+            yearEndDate: formData.yearEndDate,
+          }
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        error('Failed to Save', errorData.error || 'Could not save settings. Please try again.')
+        return
+      }
+
+      setSaveSuccess(true)
+      success('Settings Saved', 'Your changes have been saved successfully.')
+      // Refresh group data
+      await fetchGroupData()
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (err) {
+      console.error('Error saving settings:', err)
+      error('Save Failed', 'Failed to save settings. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleDelete = async () => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    alert('Group deleted!')
-    router.push('/groups')
+    // Verify group name matches
+    if (deleteConfirmText !== group?.name) {
+      warning('Name Mismatch', 'Group name does not match. Please type the exact group name to confirm deletion.')
+      return
+    }
+    
+    setDeleting(true)
+    
+    try {
+      const response = await fetch(`/api/groups/${groupId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        error('Delete Failed', errorData.error || 'Could not delete group. Please try again.')
+        return
+      }
+
+      success('Group Deleted', 'The group has been permanently deleted.')
+      router.push('/groups')
+    } catch (err) {
+      console.error('Error deleting group:', err)
+      error('Delete Failed', 'Failed to delete group. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
   }
 
-  const isAdmin = group?.ownerId === user?.uid
+  // Check if user is admin from API response
+  const isAdmin = group?.isAdmin || group?.userRole === 'ADMIN'
 
   if (loading) {
     return (
@@ -149,6 +216,18 @@ export default function GroupSettingsPage() {
             <p className="text-charcoal-muted">Manage your group configuration</p>
           </div>
         </div>
+
+        {/* Success Message */}
+        {saveSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-success-dim rounded-lg border border-success/20 flex items-center gap-2"
+          >
+            <CheckCircle className="w-5 h-5 text-success" />
+            <span className="text-success font-medium">Settings saved successfully!</span>
+          </motion.div>
+        )}
 
         {/* General Settings */}
         <Card className="mb-6">
@@ -326,15 +405,41 @@ export default function GroupSettingsPage() {
                 className="mt-4 p-4 bg-danger/5 rounded-lg border border-danger/20"
               >
                 <p className="text-sm text-charcoal mb-4">
-                  Are you sure you want to delete <strong>{group?.name}</strong>? 
-                  This will remove all members, loans, contributions, and history.
+                  This action <strong>cannot be undone</strong>. This will permanently delete the group
+                  <strong>"{group?.name}"</strong> and all its data including members, loans, and contributions.
                 </p>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-charcoal mb-2">
+                    Please type <strong>{group?.name}</strong> to confirm:
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder={`Type "${group?.name}" to confirm`}
+                    className="w-full px-4 py-3 rounded-lg border border-black/[0.08] bg-white focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger"
+                  />
+                </div>
+                
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowDeleteConfirm(false)
+                      setDeleteConfirmText('')
+                    }}
+                  >
                     Cancel
                   </Button>
-                  <Button variant="danger" onClick={handleDelete}>
-                    Yes, Delete Group
+                  <Button 
+                    variant="danger" 
+                    onClick={handleDelete}
+                    isLoading={deleting}
+                    disabled={deleteConfirmText !== group?.name}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Group
                   </Button>
                 </div>
               </motion.div>

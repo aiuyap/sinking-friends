@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils';
-import { ArrowLeft, Plus, DollarSign, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, DollarSign, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 type LoanStatus = 'PENDING' | 'APPROVED' | 'REPAID' | 'DEFAULTED' | 'REJECTED';
 type LoanTab = 'ALL' | 'PENDING' | 'ACTIVE' | 'REPAID';
@@ -23,45 +22,38 @@ type Loan = {
   totalInterest: number;
 };
 
-// Mock data for demo
-const mockLoans: Loan[] = [
-  {
-    id: '1',
-    amount: 15000,
-    borrowerName: 'John Doe',
-    status: 'APPROVED',
-    interestRate: 5,
-    dueDate: new Date('2026-04-01'),
-    totalInterest: 1500
-  },
-  {
-    id: '2',
-    amount: 8000,
-    borrowerName: 'Jane Smith',
-    status: 'PENDING',
-    interestRate: 5,
-    dueDate: new Date('2026-05-01'),
-    totalInterest: 800
-  },
-  {
-    id: '3',
-    amount: 20000,
-    borrowerName: 'External Borrower',
-    status: 'APPROVED',
-    interestRate: 10,
-    dueDate: new Date('2026-03-15'),
-    totalInterest: 4000
-  },
-  {
-    id: '4',
-    amount: 5000,
-    borrowerName: 'Alice Brown',
-    status: 'REPAID',
-    interestRate: 5,
-    dueDate: new Date('2026-01-15'),
-    totalInterest: 500
-  }
-];
+type LoanStats = {
+  total: number;
+  pending: number;
+  active: number;
+  repaid: number;
+  defaulted: number;
+  totalLent: number;
+  totalRepaid: number;
+  outstanding: number;
+};
+
+type ApiLoan = {
+  id: string;
+  amount: number;
+  borrowerName: string;
+  borrowerAvatar: string | null;
+  status: LoanStatus;
+  interestRate: number;
+  totalInterest: number;
+  totalDue: number;
+  dueDate: string;
+  isNonMember: boolean;
+  coMakers: Array<{ id: string; name: string }>;
+  isMyLoan: boolean;
+  canApprove: boolean;
+  createdAt: string;
+};
+
+type ApiResponse = {
+  loans: ApiLoan[];
+  stats: LoanStats;
+};
 
 const statusVariants: Record<LoanStatus, { variant: 'warning' | 'default' | 'success' | 'danger'; color: string; icon: React.ElementType }> = {
   PENDING: { variant: 'warning', color: 'text-yellow-600 bg-yellow-50', icon: Clock },
@@ -77,8 +69,58 @@ export default function LoanListPage() {
   const groupId = params.id as string;
   
   const [selectedTab, setSelectedTab] = useState<LoanTab>('ALL');
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [stats, setStats] = useState<LoanStats>({
+    total: 0,
+    pending: 0,
+    active: 0,
+    repaid: 0,
+    defaulted: 0,
+    totalLent: 0,
+    totalRepaid: 0,
+    outstanding: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredLoans = mockLoans.filter(loan => {
+  useEffect(() => {
+    async function fetchLoans() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch(`/api/groups/${groupId}/loans`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch loans');
+        }
+        
+        const data: ApiResponse = await response.json();
+        
+        // Transform API data to match Loan interface
+        const transformedLoans: Loan[] = data.loans.map(apiLoan => ({
+          id: apiLoan.id,
+          amount: apiLoan.amount,
+          borrowerName: apiLoan.borrowerName,
+          status: apiLoan.status,
+          interestRate: apiLoan.interestRate,
+          dueDate: new Date(apiLoan.dueDate),
+          totalInterest: apiLoan.totalInterest,
+        }));
+        
+        setLoans(transformedLoans);
+        setStats(data.stats);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchLoans();
+  }, [groupId]);
+
+  const filteredLoans = loans.filter(loan => {
     const statusMap: Record<LoanTab, (loan: Loan) => boolean> = {
       ALL: () => true,
       PENDING: loan => loan.status === 'PENDING',
@@ -88,19 +130,12 @@ export default function LoanListPage() {
     return statusMap[selectedTab](loan);
   });
 
-  const stats = {
-    pending: mockLoans.filter(l => l.status === 'PENDING').length,
-    active: mockLoans.filter(l => l.status === 'APPROVED').length,
-    repaid: mockLoans.filter(l => l.status === 'REPAID').length,
-    totalLent: mockLoans.filter(l => l.status === 'APPROVED').reduce((sum, l) => sum + l.amount, 0),
-  };
-
   const handleViewLoanDetails = (loanId: string) => {
     router.push(`/groups/${groupId}/loans/${loanId}`);
   };
 
   const tabs: { id: LoanTab; label: string; count: number }[] = [
-    { id: 'ALL', label: 'All Loans', count: mockLoans.length },
+    { id: 'ALL', label: 'All Loans', count: stats.total },
     { id: 'PENDING', label: 'Pending', count: stats.pending },
     { id: 'ACTIVE', label: 'Active', count: stats.active },
     { id: 'REPAID', label: 'Repaid', count: stats.repaid },
@@ -133,163 +168,193 @@ export default function LoanListPage() {
           </Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm text-charcoal-muted">Pending</p>
-                <p className="font-display text-xl text-charcoal">{stats.pending}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 bg-sage-dim rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-sage" />
-              </div>
-              <div>
-                <p className="text-sm text-charcoal-muted">Active</p>
-                <p className="font-display text-xl text-charcoal">{stats.active}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-charcoal-muted">Repaid</p>
-                <p className="font-display text-xl text-charcoal">{stats.repaid}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 bg-terracotta-dim rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-terracotta" />
-              </div>
-              <div>
-                <p className="text-sm text-charcoal-muted">Total Lent</p>
-                <p className="font-display text-xl text-charcoal">{formatCurrency(stats.totalLent)}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setSelectedTab(tab.id)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
-                selectedTab === tab.id
-                  ? 'bg-sage text-white'
-                  : 'bg-white text-charcoal-secondary hover:bg-black/[0.03]'
-              }`}
-            >
-              {tab.label}
-              <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                selectedTab === tab.id
-                  ? 'bg-white/20 text-white'
-                  : 'bg-black/[0.06] text-charcoal-muted'
-              }`}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Loans Table */}
-        {filteredLoans.length === 0 ? (
+        {/* Loading State */}
+        {loading && (
           <Card className="text-center py-12">
             <CardContent>
-              <DollarSign className="w-16 h-16 text-charcoal-muted mx-auto mb-4" />
-              <h3 className="font-display text-xl text-charcoal mb-2">No Loans Found</h3>
-              <p className="text-charcoal-muted mb-6">
-                {selectedTab === 'ALL' 
-                  ? 'No loans have been requested yet.'
-                  : `No ${selectedTab.toLowerCase()} loans.`
-                }
-              </p>
-              <Button onClick={() => router.push(`/groups/${groupId}`)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Request a Loan
+              <Loader2 className="w-16 h-16 text-charcoal-muted mx-auto mb-4 animate-spin" />
+              <h3 className="font-display text-xl text-charcoal mb-2">Loading Loans...</h3>
+              <p className="text-charcoal-muted">Fetching loan data from the server</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Card className="text-center py-12 border-red-200">
+            <CardContent>
+              <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+              <h3 className="font-display text-xl text-red-600 mb-2">Error Loading Loans</h3>
+              <p className="text-charcoal-muted mb-6">{error}</p>
+              <Button onClick={() => window.location.reload()}>
+                Retry
               </Button>
             </CardContent>
           </Card>
-        ) : (
-          <Card>
-            <div className="overflow-x-auto">
-              <div className="min-w-[640px]">
-                {/* Table Header */}
-                <div className="grid grid-cols-12 gap-3 px-6 py-3 text-xs text-charcoal-muted uppercase tracking-wider font-medium border-b border-black/[0.08] bg-gray-50/50">
-                  <div className="col-span-2">Borrower</div>
-                  <div className="col-span-2 text-right">Amount</div>
-                  <div className="col-span-1 text-center">Rate</div>
-                  <div className="col-span-2 text-right">Total Due</div>
-                  <div className="col-span-2">Due Date</div>
-                  <div className="col-span-2">Status</div>
-                  <div className="col-span-1 text-right">Action</div>
-                </div>
+        )}
 
-                {/* Table Rows */}
-                <div className="divide-y divide-black/[0.04]">
-                  {filteredLoans.map((loan, index) => {
-                    const status = statusVariants[loan.status];
-                    const StatusIcon = status.icon;
-                    const totalDue = loan.amount + loan.totalInterest;
-
-                    return (
-                      <motion.div
-                        key={loan.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="grid grid-cols-12 gap-3 px-6 py-4 text-sm items-center hover:bg-black/[0.02] transition-colors"
-                      >
-                        <div className="col-span-2">
-                          <p className="font-medium text-charcoal">{loan.borrowerName}</p>
-                        </div>
-                        <div className="col-span-2 text-right font-mono text-charcoal">
-                          {formatCurrency(loan.amount)}
-                        </div>
-                        <div className="col-span-1 text-center text-charcoal-secondary">
-                          {loan.interestRate}%
-                        </div>
-                        <div className="col-span-2 text-right font-mono text-charcoal">
-                          {formatCurrency(totalDue)}
-                        </div>
-                        <div className="col-span-2 text-charcoal-secondary">
-                          {loan.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </div>
-                        <div className="col-span-2">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                            <StatusIcon className="w-3 h-3" />
-                            {loan.status.charAt(0) + loan.status.slice(1).toLowerCase()}
-                          </span>
-                        </div>
-                        <div className="col-span-1 text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewLoanDetails(loan.id)}
-                          >
-                            View
-                          </Button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
+        {/* Content */}
+        {!loading && !error && (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <Card>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-charcoal-muted">Pending</p>
+                    <p className="font-display text-xl text-charcoal">{stats.pending}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-sage-dim rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-sage" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-charcoal-muted">Active</p>
+                    <p className="font-display text-xl text-charcoal">{stats.active}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-charcoal-muted">Repaid</p>
+                    <p className="font-display text-xl text-charcoal">{stats.repaid}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-terracotta-dim rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-terracotta" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-charcoal-muted">Total Lent</p>
+                    <p className="font-display text-xl text-charcoal">{formatCurrency(stats.totalLent)}</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </Card>
+
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setSelectedTab(tab.id)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                    selectedTab === tab.id
+                      ? 'bg-sage text-white'
+                      : 'bg-white text-charcoal-secondary hover:bg-black/[0.03]'
+                  }`}
+                >
+                  {tab.label}
+                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                    selectedTab === tab.id
+                      ? 'bg-white/20 text-white'
+                      : 'bg-black/[0.06] text-charcoal-muted'
+                  }`}>
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Loans Table */}
+            {filteredLoans.length === 0 ? (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <DollarSign className="w-16 h-16 text-charcoal-muted mx-auto mb-4" />
+                  <h3 className="font-display text-xl text-charcoal mb-2">No Loans Found</h3>
+                  <p className="text-charcoal-muted mb-6">
+                    {selectedTab === 'ALL' 
+                      ? 'No loans have been requested yet.'
+                      : `No ${selectedTab.toLowerCase()} loans.`
+                    }
+                  </p>
+                  <Button onClick={() => router.push(`/groups/${groupId}`)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Request a Loan
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[640px]">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-12 gap-3 px-6 py-3 text-xs text-charcoal-muted uppercase tracking-wider font-medium border-b border-black/[0.08] bg-gray-50/50">
+                      <div className="col-span-2">Borrower</div>
+                      <div className="col-span-2 text-right">Amount</div>
+                      <div className="col-span-1 text-center">Rate</div>
+                      <div className="col-span-2 text-right">Total Due</div>
+                      <div className="col-span-2">Due Date</div>
+                      <div className="col-span-2">Status</div>
+                      <div className="col-span-1 text-right">Action</div>
+                    </div>
+
+                    {/* Table Rows */}
+                    <div className="divide-y divide-black/[0.04]">
+                      {filteredLoans.map((loan, index) => {
+                        const status = statusVariants[loan.status];
+                        const StatusIcon = status.icon;
+                        const totalDue = loan.amount + loan.totalInterest;
+
+                        return (
+                          <motion.div
+                            key={loan.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="grid grid-cols-12 gap-3 px-6 py-4 text-sm items-center hover:bg-black/[0.02] transition-colors"
+                          >
+                            <div className="col-span-2">
+                              <p className="font-medium text-charcoal">{loan.borrowerName}</p>
+                            </div>
+                            <div className="col-span-2 text-right font-mono text-charcoal">
+                              {formatCurrency(loan.amount)}
+                            </div>
+                            <div className="col-span-1 text-center text-charcoal-secondary">
+                              {loan.interestRate}%
+                            </div>
+                            <div className="col-span-2 text-right font-mono text-charcoal">
+                              {formatCurrency(totalDue)}
+                            </div>
+                            <div className="col-span-2 text-charcoal-secondary">
+                              {loan.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </div>
+                            <div className="col-span-2">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                                <StatusIcon className="w-3 h-3" />
+                                {loan.status.charAt(0) + loan.status.slice(1).toLowerCase()}
+                              </span>
+                            </div>
+                            <div className="col-span-1 text-right">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewLoanDetails(loan.id)}
+                              >
+                                View
+                              </Button>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </>
         )}
       </motion.div>
     </DashboardLayout>

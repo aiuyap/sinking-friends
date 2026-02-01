@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { 
   ArrowLeft, 
@@ -25,6 +26,7 @@ import {
 export default function LoanDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { success } = useToast();
   const groupId = params.id as string;
   const loanId = params.loanId as string;
 
@@ -79,7 +81,7 @@ export default function LoanDetailPage() {
     setLoanStatus('APPROVED');
     setIsProcessing(false);
     setShowApproveModal(false);
-    alert('Loan approved successfully!');
+    success('Loan Approved', 'The loan has been approved successfully.');
   };
 
   const handleReject = async () => {
@@ -89,7 +91,7 @@ export default function LoanDetailPage() {
     setLoanStatus('REJECTED');
     setIsProcessing(false);
     setShowRejectModal(false);
-    alert('Loan rejected.');
+    success('Loan Rejected', 'The loan request has been rejected.');
   };
 
   const handlePayment = async () => {
@@ -98,7 +100,7 @@ export default function LoanDetailPage() {
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsProcessing(false);
     setShowPaymentModal(false);
-    alert('Payment recorded successfully!');
+    success('Payment Recorded', 'The payment has been recorded successfully.');
   };
 
   const statusConfig = {

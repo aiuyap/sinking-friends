@@ -1,15 +1,38 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { getCurrentUser } from '@/lib/auth'
 import { calculateMaxLoanAmount } from '@/lib/calculators'
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: groupId } = await params
 
-    const userId = request.headers.get('x-user-id') || 'mock-user-id'
+    // Get the session cookie
+    const cookieStore = await cookies()
+    const sessionCookie = cookieStore.get('__session')
+
+    if (!sessionCookie?.value) {
+      return NextResponse.json(
+        { error: 'No session cookie found' },
+        { status: 401 }
+      )
+    }
+
+    // Verify the token and get user
+    const user = await getCurrentUser(sessionCookie.value)
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      )
+    }
+
+    const userId = user.id
 
     const group = await prisma.group.findUnique({
       where: { id: groupId },
