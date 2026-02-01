@@ -153,14 +153,15 @@ Admin page to configure group settings
 ### Tasks
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 5.1 | Create Group Settings page | NOT STARTED | File does not exist |
-| 5.2 | Add Update Group API | NOT STARTED | File does not exist |
+| 5.1 | Create Group Settings page | COMPLETE | `/groups/[id]/settings` with editable fields |
+| 5.2 | Add Update Group API | PARTIAL | Frontend ready, backend uses mock |
+| 5.3 | Create Group Rules display | COMPLETE | Rules tab with 6 policy cards |
 
-### Files to Create
-- `/src/app/groups/[id]/settings/page.tsx`
-- `/src/app/api/groups/[id]/settings/route.ts`
+### Files Created
+- `/src/app/groups/[id]/settings/page.tsx` - Settings management
+- `/src/app/groups/[id]/page.tsx` - Added Rules tab (Feb 2, 2026)
 
-### Settings Form Fields (Planned)
+### Settings Form Fields (Implemented)
 - Group name
 - Description
 - Interest rate (members)
@@ -169,6 +170,14 @@ Admin page to configure group settings
 - Grace period (days)
 - Year-end distribution date
 - **Danger zone**: Delete group
+
+### Rules Display (New - Feb 2, 2026)
+- Loan Eligibility (6-month rule, 50% savings rule)
+- Interest Rates (member vs non-member)
+- Grace Period Policy (7 days)
+- Missed Payment Consequences (3 strikes = inactive)
+- Co-maker Requirements
+- Year-End Distribution Rules
 
 ---
 

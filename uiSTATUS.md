@@ -69,6 +69,25 @@
 | Create 404 Page (not-found.tsx) | ✅ Done | |
 | Create Error Page (error.tsx) | ✅ Done | |
 | Final QA - click through all flows | ⏳ Pending | |
+| Add Payment History Card to Dashboard | ✅ Done | Table view with mock data |
+
+---
+
+## Phase 6: Client Feedback (February 2, 2026)
+
+### Client Requests
+| Task | Status | Notes |
+|------|--------|-------|
+| Dashboard - Payment History Card | ✅ Done | Full-width table with scroll, all 12 mock items visible, full date format |
+| Group Dashboard - Rules Display Tab | ✅ Done | 6 rule cards displayed in Rules tab, editable by admin |
+
+**Rules to Display**:
+- Loan eligibility (6-month membership rule, 50% of avg annual savings)
+- Interest rates (member vs non-member)
+- Grace period policies
+- Missed payment consequences (3 consecutive = inactive)
+- Co-maker requirements
+- Year-end distribution rules
 
 ---
 
@@ -80,9 +99,10 @@
 | Phase 2: Group Detail Polish | 5/5 | ✅ Done |
 | Phase 3: Missing Components | 6/6 | ✅ Done |
 | Phase 4: Visual Feedback | 5/5 | ✅ Done |
-| Phase 5: Final Polish | 3/6 | ⏳ In Progress |
+| Phase 5: Final Polish | 4/6 | ⏳ In Progress |
+| Phase 6: Client Feedback | 2/2 | ✅ Done |
 
-**Overall Progress**: 23/26 tasks completed
+**Overall Progress**: 26/28 tasks completed
 
 ---
 
@@ -97,6 +117,8 @@
 - `/src/components/ui/Skeleton.tsx` - Skeleton loading components
 - `/src/components/ui/EmptyState.tsx` - Empty state components
 - `/src/components/providers/Providers.tsx` - Client-side providers wrapper
+- `/src/lib/mock/paymentHistory.ts` - Mock payment history data
+- `/src/components/dashboard/PaymentHistoryCard.tsx` - Payment history card component
 
 ## Files Modified
 
@@ -110,4 +132,5 @@
 - `/src/components/loans/LoanRequestForm.tsx` - Controlled mode support
 - `/src/components/members/InviteMemberModal.tsx` - Fixed toast variants
 - `/src/hooks/useToast.ts` - Re-exports from Toast.tsx
+- `/src/app/dashboard/page.tsx` - Added full-width Payment History section, removed Quick Actions card, 2-column grid for top cards
 

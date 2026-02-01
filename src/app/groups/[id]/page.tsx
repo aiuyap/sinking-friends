@@ -29,7 +29,7 @@ import { MemberCard } from '@/components/members/MemberCard'
 import { LoanCard } from '@/components/loans/LoanCard'
 import { InviteMemberModal } from '@/components/members/InviteMemberModal'
 
-type Tab = 'overview' | 'members' | 'loans' | 'contributions' | 'year-end'
+type Tab = 'overview' | 'rules' | 'members' | 'loans' | 'contributions' | 'year-end'
 
 // Mock data for demo
 const mockMembers = [
@@ -130,6 +130,7 @@ export default function GroupDetailPage() {
   const isAdmin = group?.ownerId === user?.uid
   const tabs = [
     { id: 'overview', label: 'Overview' },
+    { id: 'rules', label: 'Rules' },
     { id: 'members', label: 'Members' },
     { id: 'loans', label: 'Loans' },
     { id: 'contributions', label: 'Contributions' },
@@ -295,6 +296,175 @@ export default function GroupDetailPage() {
                     </div>
                   </CardContent>
                 </Card>
+              </motion.div>
+            )}
+
+            {activeTab === 'rules' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                {/* Rules Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-display text-2xl text-charcoal">Group Rules & Policies</h2>
+                    <p className="text-charcoal-muted">Understanding how this group operates</p>
+                  </div>
+                  {isAdmin && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => router.push(`/groups/${groupId}/settings`)}
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Edit Rules
+                    </Button>
+                  )}
+                </div>
+
+                {/* Rules Grid */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Loan Eligibility */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="w-10 h-10 bg-sage-dim rounded-lg flex items-center justify-center mb-4">
+                        <DollarSign className="w-5 h-5 text-sage" />
+                      </div>
+                      <h3 className="font-display text-lg text-charcoal mb-3">Loan Eligibility</h3>
+                      <ul className="space-y-2 text-sm text-charcoal-secondary">
+                        <li className="flex items-start gap-2">
+                          <span className="text-sage">•</span>
+                          <span><strong>New members (&lt; 6 months):</strong> Can borrow minimum of monthly contribution or 50% of average annual savings</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-sage">•</span>
+                          <span><strong>Established members (≥ 6 months):</strong> Can borrow maximum of monthly contribution or 50% of average annual savings</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-sage">•</span>
+                          <span>Loans exceeding monthly contribution require a co-maker</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+
+                  {/* Interest Rates */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="w-10 h-10 bg-terracotta-dim rounded-lg flex items-center justify-center mb-4">
+                        <TrendingUp className="w-5 h-5 text-terracotta" />
+                      </div>
+                      <h3 className="font-display text-lg text-charcoal mb-3">Interest Rates</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-3 bg-cream-dim rounded-lg">
+                          <span className="text-charcoal-secondary">Members</span>
+                          <span className="font-display text-xl text-sage">{group?.loanInterestRateMember || 5}%</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-cream-dim rounded-lg">
+                          <span className="text-charcoal-secondary">Non-Members</span>
+                          <span className="font-display text-xl text-terracotta">{group?.loanInterestRateNonMember || 10}%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Grace Period */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <Clock className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <h3 className="font-display text-lg text-charcoal mb-3">Grace Period Policy</h3>
+                      <ul className="space-y-2 text-sm text-charcoal-secondary">
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-600">•</span>
+                          <span><strong>7 days</strong> grace period after due date before marking missed</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-600">•</span>
+                          <span>Reminders sent <strong>2 days</strong> before payment due date</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-600">•</span>
+                          <span>No penalties during grace period</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+
+                  {/* Missed Payment Consequences */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mb-4">
+                        <AlertCircle className="w-5 h-5 text-red-600" />
+                      </div>
+                      <h3 className="font-display text-lg text-charcoal mb-3">Missed Payment Consequences</h3>
+                      <ul className="space-y-2 text-sm text-charcoal-secondary">
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-600">•</span>
+                          <span><strong>3 consecutive missed payments</strong> = inactive status</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-600">•</span>
+                          <span>Inactive members <strong>lose interest share</strong> at year-end</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-600">•</span>
+                          <span>Still receive their contributions back, just no interest</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+
+                  {/* Co-maker Requirements */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                        <Users className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <h3 className="font-display text-lg text-charcoal mb-3">Co-maker Requirements</h3>
+                      <ul className="space-y-2 text-sm text-charcoal-secondary">
+                        <li className="flex items-start gap-2">
+                          <span className="text-purple-600">•</span>
+                          <span>Required when loan exceeds <strong>monthly contribution amount</strong></span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-purple-600">•</span>
+                          <span>Co-maker must be an <strong>active member</strong> of the group</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-purple-600">•</span>
+                          <span>Co-maker shares responsibility for loan repayment</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+
+                  {/* Year-End Distribution */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="w-10 h-10 bg-gold/20 rounded-lg flex items-center justify-center mb-4">
+                        <Calendar className="w-5 h-5 text-gold" />
+                      </div>
+                      <h3 className="font-display text-lg text-charcoal mb-3">Year-End Distribution</h3>
+                      <ul className="space-y-2 text-sm text-charcoal-secondary">
+                        <li className="flex items-start gap-2">
+                          <span className="text-gold">•</span>
+                          <span>Scheduled for <strong>{group?.settings?.yearEndDate ? formatDate(new Date(group.settings.yearEndDate)) : 'Dec 20, 2026'}</strong></span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-gold">•</span>
+                          <span><strong>5 days grace period</strong> after year-end for final payments</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-gold">•</span>
+                          <span>Interest distributed <strong>proportionally</strong> based on contributions</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
               </motion.div>
             )}
 

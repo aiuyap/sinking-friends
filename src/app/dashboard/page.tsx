@@ -9,6 +9,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { formatCurrency } from '@/lib/utils'
 import { DollarSign, Users, Calendar, TrendingUp, Bell, Plus, ArrowRight } from 'lucide-react'
+import { PaymentHistoryCard } from '@/components/dashboard/PaymentHistoryCard'
+import { mockPaymentHistory } from '@/lib/mock/paymentHistory'
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth()
@@ -124,7 +126,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
           {/* My Contributions Card */}
           <Card>
             <CardHeader>
@@ -171,24 +173,10 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Quick Actions Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button onClick={() => router.push('/groups/new')} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Create New Group
-              </Button>
-              <Button onClick={() => router.push('/groups')} variant="outline" className="w-full">
-                <Users className="w-4 h-4 mr-2" />
-                Browse Groups
-              </Button>
-            </CardContent>
-          </Card>
         </div>
+
+        {/* Payment History Section - Full Width */}
+        <PaymentHistoryCard data={mockPaymentHistory} variant="full-width" />
 
         {/* Recent Groups */}
         <div>

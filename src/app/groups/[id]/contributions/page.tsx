@@ -4,11 +4,19 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { ContributionList } from '@/components/contributions/ContributionCard'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Calendar, DollarSign, ArrowLeft, CheckCircle } from 'lucide-react'
+import { Calendar, DollarSign, ArrowLeft, CheckCircle, Clock, AlertCircle } from 'lucide-react'
+
+interface Contribution {
+  id: string
+  memberName: string
+  scheduledDate: string
+  paidDate?: string
+  amount: number
+  isMissed: boolean
+}
 
 export default function GroupContributionsPage() {
   const router = useRouter()
@@ -16,7 +24,7 @@ export default function GroupContributionsPage() {
   const groupId = params.id as string
   
   const [loading, setLoading] = useState(true)
-  const [contributions, setContributions] = useState<any[]>([])
+  const [contributions, setContributions] = useState<Contribution[]>([])
   const [group, setGroup] = useState<any>(null)
   const [stats, setStats] = useState({
     total: 0,
@@ -64,6 +72,28 @@ export default function GroupContributionsPage() {
       }
     } catch (error) {
       console.error('Error marking as paid:', error)
+    }
+  }
+
+  const getStatusConfig = (contribution: Contribution) => {
+    if (contribution.isMissed) {
+      return { 
+        label: 'Missed', 
+        color: 'text-red-600 bg-red-50',
+        icon: AlertCircle
+      }
+    }
+    if (contribution.paidDate) {
+      return { 
+        label: 'Paid', 
+        color: 'text-green-600 bg-green-50',
+        icon: CheckCircle
+      }
+    }
+    return { 
+      label: 'Pending', 
+      color: 'text-yellow-600 bg-yellow-50',
+      icon: Clock
     }
   }
 
@@ -146,7 +176,7 @@ export default function GroupContributionsPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="w-10 h-10 bg-danger-dim rounded-lg flex items-center justify-center mb-3">
-                  <CheckCircle className="w-5 h-5 text-danger" />
+                  <AlertCircle className="w-5 h-5 text-danger" />
                 </div>
                 <p className="text-sm text-charcoal-muted mb-1">Missed</p>
                 <p className="font-display text-2xl text-charcoal">{stats.missed}</p>
@@ -155,7 +185,7 @@ export default function GroupContributionsPage() {
           </motion.div>
         </div>
 
-        {/* Contributions List */}
+        {/* Contributions Table */}
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sage"></div>
@@ -169,10 +199,63 @@ export default function GroupContributionsPage() {
             </p>
           </div>
         ) : (
-          <ContributionList
-            contributions={contributions}
-            onMarkAsPaid={handleMarkAsPaid}
-          />
+          <Card>
+            <div className="overflow-x-auto">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 gap-3 px-6 py-3 text-xs text-charcoal-muted uppercase tracking-wider font-medium border-b border-black/[0.08] bg-gray-50/50">
+                <div className="col-span-3">Member</div>
+                <div className="col-span-3">Scheduled Date</div>
+                <div className="col-span-2 text-right">Amount</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-2 text-right">Action</div>
+              </div>
+
+              {/* Table Rows */}
+              <div className="divide-y divide-black/[0.04]">
+                {contributions.map((contribution, index) => {
+                  const status = getStatusConfig(contribution)
+                  const StatusIcon = status.icon
+
+                  return (
+                    <motion.div
+                      key={contribution.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="grid grid-cols-12 gap-3 px-6 py-4 text-sm items-center hover:bg-black/[0.02] transition-colors"
+                    >
+                      <div className="col-span-3">
+                        <p className="font-medium text-charcoal">{contribution.memberName}</p>
+                      </div>
+                      <div className="col-span-3 text-charcoal-secondary">
+                        {formatDate(new Date(contribution.scheduledDate))}
+                      </div>
+                      <div className="col-span-2 text-right font-mono text-charcoal">
+                        {formatCurrency(contribution.amount)}
+                      </div>
+                      <div className="col-span-2">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                          <StatusIcon className="w-3 h-3" />
+                          {status.label}
+                        </span>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        {!contribution.paidDate && !contribution.isMissed && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleMarkAsPaid(contribution.id)}
+                          >
+                            Mark Paid
+                          </Button>
+                        )}
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </div>
+          </Card>
         )}
       </motion.div>
     </DashboardLayout>
