@@ -24,7 +24,7 @@ export function InviteMemberModal({
       toast({
         title: 'Error',
         description: 'Please enter an email address',
-        variant: 'destructive'
+        variant: 'error'
       });
       return;
     }
@@ -58,7 +58,7 @@ export function InviteMemberModal({
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'An unknown error occurred',
-        variant: 'destructive'
+        variant: 'error'
       });
     } finally {
       setIsLoading(false);

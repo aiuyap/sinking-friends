@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { 
   LayoutDashboard, 
   Users, 
-  DollarSign, 
+  DollarSign,
   Settings, 
   LogOut
 } from 'lucide-react'
@@ -19,7 +19,6 @@ interface SidebarProps {
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Groups', href: '/groups', icon: Users },
-  { name: 'Funds', href: '/funds', icon: DollarSign },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 

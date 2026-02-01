@@ -12,9 +12,25 @@ import { formatCurrency } from '@/lib/utils'
 import { calculateMaxLoanAmount, type LoanEligibility } from '@/lib/calculators'
 import { DollarSign, AlertCircle, Info } from 'lucide-react'
 
-export default function LoanRequestForm({ groupId }: { groupId: string }) {
+interface LoanRequestFormProps {
+  groupId: string
+  isOpen?: boolean
+  onClose?: () => void
+}
+
+export default function LoanRequestForm({ groupId, isOpen: controlledIsOpen, onClose }: LoanRequestFormProps) {
   const router = useRouter()
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
+  
+  // Support both controlled and uncontrolled modes
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen
+  const setIsOpen = (value: boolean) => {
+    if (controlledIsOpen !== undefined && onClose && !value) {
+      onClose()
+    } else {
+      setInternalIsOpen(value)
+    }
+  }
   const [amount, setAmount] = useState('')
   const [isNonMember, setIsNonMember] = useState(false)
   const [nonMemberName, setNonMemberName] = useState('')
