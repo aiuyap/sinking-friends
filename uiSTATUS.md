@@ -133,4 +133,5 @@
 - `/src/components/members/InviteMemberModal.tsx` - Fixed toast variants
 - `/src/hooks/useToast.ts` - Re-exports from Toast.tsx
 - `/src/app/dashboard/page.tsx` - Added full-width Payment History section, removed Quick Actions card, 2-column grid for top cards
+- `/src/app/groups/[id]/page.tsx` - Moved View All Loans button to top beside Request Loan
 

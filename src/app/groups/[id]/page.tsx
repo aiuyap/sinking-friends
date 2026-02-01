@@ -522,10 +522,18 @@ export default function GroupDetailPage() {
                     <h2 className="font-display text-2xl text-charcoal">Loans</h2>
                     <p className="text-charcoal-muted">{mockLoans.length} loans in this group</p>
                   </div>
-                  <Button onClick={() => setShowLoanModal(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Request Loan
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => router.push(`/groups/${groupId}/loans`)}
+                    >
+                      View All Loans
+                    </Button>
+                    <Button onClick={() => setShowLoanModal(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Request Loan
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Loan Stats */}
@@ -570,15 +578,6 @@ export default function GroupDetailPage() {
                       />
                     </motion.div>
                   ))}
-                </div>
-
-                <div className="mt-6 text-center">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => router.push(`/groups/${groupId}/loans`)}
-                  >
-                    View All Loans
-                  </Button>
                 </div>
               </motion.div>
             )}

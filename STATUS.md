@@ -111,11 +111,15 @@ Create loan list, detail, and repayment pages
 | 3.6 | Create RepaymentHistory component | MISSING | Only inline implementation exists |
 
 ### Files Created
-- `/src/app/groups/[id]/loans/page.tsx`
+- `/src/app/groups/[id]/loans/page.tsx` - Table format with filters
 - `/src/app/groups/[id]/loans/[loanId]/page.tsx`
 - `/src/components/loans/LoanCard.tsx`
 - `/src/components/loans/LoanEligibilityDisplay.tsx`
 - `/src/components/loans/LoanRequestForm.tsx`
+
+### UI Improvements (Feb 2, 2026)
+- ✅ Loans list converted to table format (columns: Borrower, Amount, Rate, Total, Due Date, Status, Action)
+- ✅ "View All Loans" button moved to top beside "Request Loan" button
 
 ### Files Missing
 - `/src/components/loans/RepaymentHistory.tsx` - Need to extract from loan detail page
