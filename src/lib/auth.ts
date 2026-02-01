@@ -41,14 +41,21 @@ export async function syncUserWithDatabase(userRecord: {
 
 export async function getCurrentUser(token: string) {
   try {
+    console.log('[Auth] Verifying token, length:', token?.length);
+    console.log('[Auth] Token start:', token?.substring(0, 50) + '...');
+    
     const decodedToken = await verifyIdToken(token);
+    console.log('[Auth] ✅ Token verified! UID:', decodedToken.uid);
+    console.log('[Auth] Token email:', decodedToken.email);
+    
     return syncUserWithDatabase({
       uid: decodedToken.uid,
       email: decodedToken.email,
       name: decodedToken.name,
       picture: decodedToken.picture
     });
-  } catch {
+  } catch (error) {
+    console.error('[Auth] ❌ Token verification failed:', error);
     return null;
   }
 }
