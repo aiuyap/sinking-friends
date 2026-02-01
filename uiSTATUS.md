@@ -131,7 +131,7 @@
 - `/src/app/groups/[id]/members/page.tsx` - Added DashboardLayout, stats
 - `/src/app/notifications/page.tsx` - Added DashboardLayout
 - `/src/components/layout/Sidebar.tsx` - Removed Funds link
-- `/src/components/loans/LoanRequestForm.tsx` - Controlled mode support
+- `/src/components/loans/LoanRequestForm.tsx` - Controlled mode support, fixed rogue button at bottom (returns null when no eligibility)
 - `/src/components/members/InviteMemberModal.tsx` - Fixed toast variants
 - `/src/hooks/useToast.ts` - Re-exports from Toast.tsx
 - `/src/app/dashboard/page.tsx` - Simplified to My Contributions, Active Loans, and Payment History only (removed Stats Grid and Your Groups)

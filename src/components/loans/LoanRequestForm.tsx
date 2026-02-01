@@ -96,11 +96,9 @@ export default function LoanRequestForm({ groupId, isOpen: controlledIsOpen, onC
   }
 
   if (!eligibility) {
-    return (
-      <Button onClick={() => setIsOpen(true)}>
-        Request Loan
-      </Button>
-    )
+    // Return null when no eligibility data is available
+    // The modal will be triggered by parent component buttons
+    return null
   }
 
   const maxLoan = eligibility.maxLoan

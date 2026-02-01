@@ -120,6 +120,7 @@ Create loan list, detail, and repayment pages
 ### UI Improvements (Feb 2, 2026)
 - ✅ Loans list converted to table format (columns: Borrower, Amount, Rate, Total, Due Date, Status, Action)
 - ✅ "View All Loans" button moved to top beside "Request Loan" button
+- ✅ Fixed rogue "Request Loan" button at bottom of group pages (component now returns null when no eligibility data)
 
 ### Files Missing
 - `/src/components/loans/RepaymentHistory.tsx` - Need to extract from loan detail page
