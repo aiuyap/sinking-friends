@@ -29,40 +29,6 @@ interface Group {
   termEndDate: string
 }
 
-// Mock data for demo
-const mockGroups: Group[] = [
-  {
-    id: '1',
-    name: 'Family Savings Circle',
-    description: 'Our family sinking fund for emergencies and big purchases',
-    memberCount: 8,
-    totalPool: 156000,
-    interestRate: 5,
-    isOwner: true,
-    termEndDate: '2026-12-31'
-  },
-  {
-    id: '2',
-    name: 'Office Fund Group',
-    description: 'Colleague savings group for shared goals',
-    memberCount: 12,
-    totalPool: 284500,
-    interestRate: 5,
-    isOwner: false,
-    termEndDate: '2026-12-31'
-  },
-  {
-    id: '3',
-    name: 'Friends Investment Club',
-    description: 'Monthly savings with trusted friends',
-    memberCount: 5,
-    totalPool: 75000,
-    interestRate: 5,
-    isOwner: true,
-    termEndDate: '2026-06-30'
-  }
-]
-
 export default function GroupsPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -83,14 +49,24 @@ export default function GroupsPage() {
   const fetchGroups = async () => {
     try {
       setLoading(true)
-      // TODO: Replace with real API call
-      // const response = await fetch('/api/groups')
-      // const data = await response.json()
-      // setGroups(data.groups)
-      
-      // Using mock data for demo
-      await new Promise(resolve => setTimeout(resolve, 500))
-      setGroups(mockGroups)
+      const response = await fetch('/api/groups')
+      if (response.ok) {
+        const data = await response.json()
+        // Transform API response to match our Group interface
+        const transformedGroups = data.groups.map((g: any) => ({
+          id: g.id,
+          name: g.name,
+          description: g.description,
+          memberCount: g.memberCount,
+          totalPool: g.totalPool || 0,
+          interestRate: g.interestRate,
+          isOwner: g.role === 'ADMIN',
+          termEndDate: g.termEndDate ? new Date(g.termEndDate).toISOString().split('T')[0] : ''
+        }))
+        setGroups(transformedGroups)
+      } else {
+        console.error('Failed to fetch groups:', response.status)
+      }
     } catch (error) {
       console.error('Error fetching groups:', error)
     } finally {
