@@ -33,6 +33,14 @@ Added all configuration fields (interest rates, term, grace period, year-end)
 ### 4. Loan Request Form Improvements ✅
 Complete redesign with card-based layout, slider, and lazy co-maker loading
 
+### 5. Dashboard Payment History - Real Data ✅
+Converted payment history from mock data to real database data:
+- Created shared types file (`/src/types/payment.ts`)
+- Extended `/api/dashboard` to fetch contributions, loans, and repayments
+- Maps database records to payment history items with proper status
+- Sorted by date (descending) with combined view of all transactions
+- Dashboard page now displays real payment history from database
+
 ---
 
 ## Phase 4: Members API & UI ✅ COMPLETE
@@ -200,7 +208,7 @@ fetch('/api/groups/GROUP_ID/members')
 
 ### Pages
 
-- `/dashboard` - Real data with stats
+- `/dashboard` - Real data with stats ⭐ **PAYMENT HISTORY NOW REAL DATA**
 - `/groups` - Real groups with pool totals
 - `/groups/new` ⭐ **NEWLY ENHANCED** - Full configuration during creation
 - `/groups/[id]` - Real group details with all tabs
@@ -247,7 +255,7 @@ fetch('/api/groups/GROUP_ID/members')
 
 ### API Endpoints with Real Data
 ```
-GET  /api/dashboard                    ✅ Real data
+GET  /api/dashboard                    ✅ Real data + payment history
 GET  /api/groups                       ✅ Real data
 GET  /api/groups/[id]                  ✅ Real data + auth
 POST /api/groups                       ✅ Create with full config

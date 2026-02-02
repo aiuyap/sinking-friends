@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button'
 import { formatCurrency } from '@/lib/utils'
 import { DollarSign } from 'lucide-react'
 import { PaymentHistoryCard } from '@/components/dashboard/PaymentHistoryCard'
-import { mockPaymentHistory } from '@/lib/mock/paymentHistory'
+import type { PaymentHistoryItem } from '@/types/payment'
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth()
@@ -23,6 +23,7 @@ export default function DashboardPage() {
     activeLoans: 0,
     myContributions: 0,
   })
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function DashboardPage() {
           activeLoans: 0,
           myContributions: 0,
         })
+        setPaymentHistory(data.paymentHistory || [])
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -123,7 +125,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Payment History Section - Full Width */}
-        <PaymentHistoryCard data={mockPaymentHistory} variant="full-width" />
+        <PaymentHistoryCard data={paymentHistory} variant="full-width" />
       </motion.div>
     </DashboardLayout>
   )

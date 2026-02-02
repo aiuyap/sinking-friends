@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';
 import { Clock, CheckCircle2, CircleDashed, Circle, CheckCircle } from 'lucide-react';
-import type { PaymentHistoryItem, PaymentStatus, PaymentType } from '@/lib/mock/paymentHistory';
+import type { PaymentHistoryItem, PaymentStatus, PaymentType } from '@/types/payment';
 
 interface PaymentHistoryCardProps {
   data: PaymentHistoryItem[];
