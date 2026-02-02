@@ -214,7 +214,7 @@ export default function GroupsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {filteredGroups.map((group, index) => (
               <motion.div
                 key={group.id}
@@ -226,17 +226,17 @@ export default function GroupsPage() {
                   className="hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer h-full" 
                   onClick={() => router.push(`/groups/${group.id}`)}
                 >
-                  <CardContent className="p-6 flex flex-col h-full">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-sage rounded-lg flex items-center justify-center">
+                  <CardContent className="p-6 flex flex-col h-full min-w-0">
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className="w-12 h-12 bg-sage rounded-lg flex items-center justify-center flex-shrink-0">
                           <PhilippinePeso className="w-6 h-6 text-white" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-display text-lg text-charcoal">{group.name}</h3>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start gap-2 flex-wrap">
+                            <h3 className="font-display text-lg text-charcoal truncate">{group.name}</h3>
                             {group.isOwner && (
-                              <span className="px-2 py-0.5 text-xs font-medium bg-sage-dim text-sage rounded-full">
+                              <span className="px-2 py-0.5 text-xs font-medium bg-sage-dim text-sage rounded-full flex-shrink-0 mt-0.5">
                                 Owner
                               </span>
                             )}
@@ -246,7 +246,7 @@ export default function GroupsPage() {
                           </p>
                         </div>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-sage flex-shrink-0" />
+                      <ArrowRight className="w-5 h-5 text-sage flex-shrink-0 mt-3" />
                     </div>
 
                     <div className="flex-1" />
