@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/Toast'
 import { 
   ArrowLeft, 
   Settings, 
-  DollarSign, 
+  PhilippinePeso, 
   Calendar,
   Clock,
   AlertTriangle,
@@ -255,7 +255,7 @@ export default function GroupSettingsPage() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-sage" />
+              <PhilippinePeso className="w-5 h-5 text-sage" />
               Loan Settings
             </CardTitle>
           </CardHeader>

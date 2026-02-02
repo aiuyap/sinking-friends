@@ -13,7 +13,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { 
   ArrowLeft, 
   Users, 
-  DollarSign, 
+  PhilippinePeso, 
   Calendar, 
   Plus, 
   Settings, 
@@ -288,7 +288,7 @@ export default function GroupDetailPage() {
                   <Card>
                     <CardContent className="p-6 text-center">
                       <div className="w-12 h-12 bg-sage-dim rounded-2xl flex items-center justify-center mx-auto mb-3">
-                        <DollarSign className="w-6 h-6 text-sage" />
+                        <PhilippinePeso className="w-6 h-6 text-sage" />
                       </div>
                       <p className="text-sm text-charcoal-muted mb-1">Total Pool</p>
                       <p className="font-display text-2xl text-charcoal">{formatCurrency(group?.totalPool || 0)}</p>
@@ -370,7 +370,7 @@ export default function GroupDetailPage() {
                   <Card>
                     <CardContent className="p-6">
                       <div className="w-10 h-10 bg-sage-dim rounded-lg flex items-center justify-center mb-4">
-                        <DollarSign className="w-5 h-5 text-sage" />
+                        <PhilippinePeso className="w-5 h-5 text-sage" />
                       </div>
                       <h3 className="font-display text-lg text-charcoal mb-3">Loan Eligibility</h3>
                       <ul className="space-y-2 text-sm text-charcoal-secondary">
@@ -608,7 +608,7 @@ export default function GroupDetailPage() {
                   </div>
                 ) : loans.length === 0 ? (
                   <div className="text-center py-12">
-                    <DollarSign className="w-16 h-16 text-charcoal-muted mx-auto mb-4" />
+                    <PhilippinePeso className="w-16 h-16 text-charcoal-muted mx-auto mb-4" />
                     <p className="text-charcoal-muted mb-4">No loans yet</p>
                     <Button onClick={() => setShowLoanModal(true)}>
                       <Plus className="w-4 h-4 mr-2" />
@@ -620,12 +620,12 @@ export default function GroupDetailPage() {
                     {loans.slice(0, 5).map((loan, index) => {
                       const statusLookup = {
                         PENDING: { color: 'text-yellow-600 bg-yellow-50', icon: Clock, label: 'Pending' },
-                        APPROVED: { color: 'text-sage bg-sage/10', icon: DollarSign, label: 'Active' },
+                        APPROVED: { color: 'text-sage bg-sage/10', icon: PhilippinePeso, label: 'Active' },
                         REPAID: { color: 'text-green-600 bg-green-50', icon: CheckCircle, label: 'Repaid' },
                         DEFAULTED: { color: 'text-red-600 bg-red-50', icon: AlertCircle, label: 'Defaulted' },
                         REJECTED: { color: 'text-red-600 bg-red-50', icon: XCircle, label: 'Rejected' }
                       } as const;
-                      const statusConfig = statusLookup[loan.status as keyof typeof statusLookup] || { color: 'text-charcoal bg-gray-100', icon: DollarSign, label: loan.status };
+                      const statusConfig = statusLookup[loan.status as keyof typeof statusLookup] || { color: 'text-charcoal bg-gray-100', icon: PhilippinePeso, label: loan.status };
                       const StatusIcon = statusConfig.icon;
                       
                       return (
@@ -785,7 +785,7 @@ export default function GroupDetailPage() {
                   <Card>
                     <CardContent className="p-6 text-center">
                       <div className="w-12 h-12 bg-sage-dim rounded-2xl flex items-center justify-center mx-auto mb-3">
-                        <DollarSign className="w-6 h-6 text-sage" />
+                        <PhilippinePeso className="w-6 h-6 text-sage" />
                       </div>
                       <p className="text-sm text-charcoal-muted mb-1">Total Pool</p>
                       <p className="font-display text-2xl text-charcoal">{formatCurrency(156000)}</p>

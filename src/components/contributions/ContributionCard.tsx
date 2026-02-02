@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import { formatDate, formatCurrency, isPastDate, getDaysBetween } from '@/lib/utils'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { Calendar, CheckCircle, AlertCircle, DollarSign } from 'lucide-react'
+import { Calendar, CheckCircle, AlertCircle, PhilippinePeso } from 'lucide-react'
 
 interface Contribution {
   id: string
@@ -98,7 +98,7 @@ export function ContributionCard({ contribution, onMarkAsPaid, className }: Cont
 
           <div className="flex items-center justify-between pt-2 border-t border-black/[0.06]">
             <div className="flex items-center gap-2 text-charcoal">
-              <DollarSign className="w-4 h-4 text-sage" />
+              <PhilippinePeso className="w-4 h-4 text-sage" />
               <span className="text-sm">Amount</span>
             </div>
             <span className="font-display text-2xl text-charcoal">{formatCurrency(contribution.amount)}</span>

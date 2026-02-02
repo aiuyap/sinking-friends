@@ -7,7 +7,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { Calendar, DollarSign, ArrowLeft, CheckCircle, Clock, AlertCircle } from 'lucide-react'
+import { Calendar, PhilippinePeso, ArrowLeft, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 
 interface Contribution {
   id: string
@@ -128,7 +128,7 @@ export default function GroupContributionsPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="w-10 h-10 bg-sage-dim rounded-lg flex items-center justify-center mb-3">
-                  <DollarSign className="w-5 h-5 text-sage" />
+                  <PhilippinePeso className="w-5 h-5 text-sage" />
                 </div>
                 <p className="text-sm text-charcoal-muted mb-1">Total Contributions</p>
                 <p className="font-display text-2xl text-charcoal">{formatCurrency(stats.total)}</p>

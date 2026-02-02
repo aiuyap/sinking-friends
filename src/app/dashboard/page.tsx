@@ -8,7 +8,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { formatCurrency } from '@/lib/utils'
-import { DollarSign } from 'lucide-react'
+import { PhilippinePeso } from 'lucide-react'
 import { PaymentHistoryCard } from '@/components/dashboard/PaymentHistoryCard'
 import type { PaymentHistoryItem } from '@/types/payment'
 
@@ -106,7 +106,7 @@ export default function DashboardPage() {
             <CardContent>
               {stats.activeLoans === 0 ? (
                 <div className="text-center py-8">
-                  <DollarSign className="w-12 h-12 text-charcoal-muted mx-auto mb-3" />
+                  <PhilippinePeso className="w-12 h-12 text-charcoal-muted mx-auto mb-3" />
                   <p className="text-charcoal-secondary">No active loans</p>
                 </div>
               ) : (

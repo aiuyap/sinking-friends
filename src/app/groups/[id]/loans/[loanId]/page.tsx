@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { 
   ArrowLeft, 
-  DollarSign, 
+  PhilippinePeso, 
   Calendar, 
   User, 
   Users, 
@@ -23,84 +23,190 @@ import {
   CreditCard
 } from 'lucide-react';
 
+interface LoanData {
+  id: string;
+  amount: number;
+  interestRate: number;
+  totalInterest: number;
+  termMonths: number;
+  status: 'PENDING' | 'APPROVED' | 'REPAID' | 'REJECTED';
+  totalDue: number;
+  dueDate: string;
+  approvedDate: string | null;
+  createdAt: string;
+  borrowerId: string;
+  borrowerName: string;
+  borrowerEmail: string | null;
+  borrowerAvatar: string | null;
+  isNonMember: boolean;
+  groupId: string;
+  groupName: string;
+  coMakers: Array<{
+    id: string;
+    name: string;
+    avatar: string | null;
+  }>;
+  repayments: Array<{
+    id: string;
+    amount: number;
+    interest: number;
+    principal: number;
+    paymentDate: string;
+    note: string | null;
+  }>;
+  totalRepaid: number;
+  remainingBalance: number;
+  progress: number;
+  isMyLoan: boolean;
+  isCoMaker: boolean;
+  canApprove: boolean;
+  canRepay: boolean;
+  canEdit: boolean;
+}
+
 export default function LoanDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const { success } = useToast();
+  const { success, error: showError } = useToast();
   const groupId = params.id as string;
   const loanId = params.loanId as string;
 
+  const [loan, setLoan] = useState<LoanData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [loanStatus, setLoanStatus] = useState<'PENDING' | 'APPROVED' | 'REPAID' | 'REJECTED'>('PENDING');
+  const [paymentAmount, setPaymentAmount] = useState<string>('');
 
-  // Mock loan details - replace with actual data fetching
-  const loanDetails = {
-    id: loanId,
-    borrowerName: 'Jane Doe',
-    borrowerEmail: 'jane@example.com',
-    amount: 15000,
-    status: loanStatus,
-    interestRate: 5,
-    approvedDate: loanStatus !== 'PENDING' ? new Date('2026-01-15') : null,
-    dueDate: new Date('2026-03-15'),
-    totalInterest: 1500,
-    repaidAmount: 5000,
-    isNonMember: false,
-    coMakers: [
-      { id: '1', name: 'John Smith', email: 'john@example.com' },
-    ],
-    repaymentHistory: [
-      { 
-        id: '1',
-        date: new Date('2026-02-01'), 
-        amount: 2500, 
-        principalPaid: 2250, 
-        interestPaid: 250 
-      },
-      { 
-        id: '2',
-        date: new Date('2026-02-15'), 
-        amount: 2500, 
-        principalPaid: 2250, 
-        interestPaid: 250 
+  // Fetch loan data
+  useEffect(() => {
+    const fetchLoanData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch(`/api/loans/${loanId}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Loan not found');
+          } else if (response.status === 403) {
+            setError('You do not have access to this loan');
+          } else {
+            setError('Failed to fetch loan details');
+          }
+          return;
+        }
+        
+        const data = await response.json();
+        setLoan(data.loan);
+      } catch (err) {
+        setError('Failed to fetch loan details');
+        console.error('Error fetching loan:', err);
+      } finally {
+        setLoading(false);
       }
-    ]
-  };
+    };
 
-  const totalDue = loanDetails.amount + loanDetails.totalInterest;
-  const remainingBalance = totalDue - loanDetails.repaidAmount;
-  const progressPercent = (loanDetails.repaidAmount / totalDue) * 100;
+    if (loanId) {
+      fetchLoanData();
+    }
+  }, [loanId]);
 
   const handleApprove = async () => {
-    setIsProcessing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoanStatus('APPROVED');
-    setIsProcessing(false);
-    setShowApproveModal(false);
-    success('Loan Approved', 'The loan has been approved successfully.');
+    try {
+      setIsProcessing(true);
+      const response = await fetch(`/api/loans/${loanId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve' })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        showError('Error', error.error || 'Failed to approve loan');
+        return;
+      }
+      
+      const data = await response.json();
+      setLoan(data.loan);
+      setShowApproveModal(false);
+      success('Loan Approved', 'The loan has been approved successfully.');
+    } catch (err) {
+      showError('Error', 'Failed to approve loan');
+      console.error('Error approving loan:', err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleReject = async () => {
-    setIsProcessing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoanStatus('REJECTED');
-    setIsProcessing(false);
-    setShowRejectModal(false);
-    success('Loan Rejected', 'The loan request has been rejected.');
+    try {
+      setIsProcessing(true);
+      const response = await fetch(`/api/loans/${loanId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject' })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        showError('Error', error.error || 'Failed to reject loan');
+        return;
+      }
+      
+      const data = await response.json();
+      setLoan(data.loan);
+      setShowRejectModal(false);
+      success('Loan Rejected', 'The loan request has been rejected.');
+    } catch (err) {
+      showError('Error', 'Failed to reject loan');
+      console.error('Error rejecting loan:', err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handlePayment = async () => {
-    setIsProcessing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsProcessing(false);
-    setShowPaymentModal(false);
-    success('Payment Recorded', 'The payment has been recorded successfully.');
+    try {
+      setIsProcessing(true);
+      const amount = parseFloat(paymentAmount);
+      
+      if (!amount || amount <= 0) {
+        showError('Error', 'Please enter a valid payment amount');
+        return;
+      }
+      
+      const response = await fetch(`/api/loans/${loanId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'repay', amount })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        showError('Error', error.error || 'Failed to record payment');
+        return;
+      }
+      
+      const data = await response.json();
+      
+      // Update loan data with formatted response from API
+      if (data.loan) {
+        setLoan(data.loan);
+      }
+      
+      setShowPaymentModal(false);
+      setPaymentAmount('');
+      success('Payment Recorded', 'The payment has been recorded successfully.');
+    } catch (err) {
+      showError('Error', 'Failed to record payment');
+      console.error('Error recording payment:', err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const statusConfig = {
@@ -110,7 +216,44 @@ export default function LoanDetailPage() {
     REJECTED: { color: 'danger', icon: XCircle, label: 'Rejected' },
   };
 
-  const StatusIcon = statusConfig[loanDetails.status].icon;
+  if (loading) {
+    return (
+      <DashboardLayout title="Loan Details">
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sage"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout title="Loan Details">
+        <div className="text-center py-12">
+          <AlertTriangle className="w-12 h-12 text-terracotta mx-auto mb-4" />
+          <p className="text-charcoal-secondary mb-4">{error}</p>
+          <Button onClick={() => router.push(`/groups/${groupId}/loans`)}>
+            Back to Loans
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!loan) {
+    return (
+      <DashboardLayout title="Loan Details">
+        <div className="text-center py-12">
+          <p className="text-charcoal-secondary mb-4">Loan not found</p>
+          <Button onClick={() => router.push(`/groups/${groupId}/loans`)}>
+            Back to Loans
+          </Button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const StatusIcon = statusConfig[loan.status].icon;
 
   return (
     <DashboardLayout title="Loan Details">
@@ -132,21 +275,21 @@ export default function LoanDetailPage() {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="font-display text-3xl text-charcoal">
-                {formatCurrency(loanDetails.amount)}
+                {formatCurrency(loan.amount)}
               </h1>
-              <Badge variant={statusConfig[loanDetails.status].color as any}>
+              <Badge variant={statusConfig[loan.status].color as any}>
                 <StatusIcon className="w-3 h-3 mr-1" />
-                {statusConfig[loanDetails.status].label}
+                {statusConfig[loan.status].label}
               </Badge>
             </div>
             <p className="text-charcoal-muted">
-              Loan #{loanId} &middot; {loanDetails.borrowerName}
+              Loan #{loanId} &middot; {loan.borrowerName || 'Unknown'}
             </p>
           </div>
           
           {/* Action Buttons */}
           <div className="flex gap-3">
-            {loanDetails.status === 'PENDING' && (
+            {loan.canApprove && (
               <>
                 <Button variant="success" onClick={() => setShowApproveModal(true)}>
                   <CheckCircle className="w-4 h-4 mr-2" />
@@ -158,7 +301,7 @@ export default function LoanDetailPage() {
                 </Button>
               </>
             )}
-            {loanDetails.status === 'APPROVED' && (
+            {loan.canRepay && (
               <Button onClick={() => setShowPaymentModal(true)}>
                 <CreditCard className="w-4 h-4 mr-2" />
                 Record Payment
@@ -174,7 +317,7 @@ export default function LoanDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-sage" />
+                  <PhilippinePeso className="w-5 h-5 text-sage" />
                   Loan Information
                 </CardTitle>
               </CardHeader>
@@ -182,39 +325,39 @@ export default function LoanDetailPage() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="p-4 bg-cream-dim rounded-lg">
                     <p className="text-sm text-charcoal-muted mb-1">Principal Amount</p>
-                    <p className="font-display text-xl text-charcoal">{formatCurrency(loanDetails.amount)}</p>
+                    <p className="font-display text-xl text-charcoal">{formatCurrency(loan.amount)}</p>
                   </div>
                   <div className="p-4 bg-cream-dim rounded-lg">
                     <p className="text-sm text-charcoal-muted mb-1">Interest Rate</p>
-                    <p className="font-display text-xl text-charcoal">{loanDetails.interestRate}% / month</p>
+                    <p className="font-display text-xl text-charcoal">{loan.interestRate}% / month</p>
                   </div>
                   <div className="p-4 bg-cream-dim rounded-lg">
                     <p className="text-sm text-charcoal-muted mb-1">Total Interest</p>
-                    <p className="font-display text-xl text-terracotta">{formatCurrency(loanDetails.totalInterest)}</p>
+                    <p className="font-display text-xl text-terracotta">{formatCurrency(loan.totalInterest)}</p>
                   </div>
                   <div className="p-4 bg-cream-dim rounded-lg">
                     <p className="text-sm text-charcoal-muted mb-1">Total Due</p>
-                    <p className="font-display text-xl text-charcoal">{formatCurrency(totalDue)}</p>
+                    <p className="font-display text-xl text-charcoal">{formatCurrency(loan.totalDue)}</p>
                   </div>
                 </div>
 
-                {loanDetails.status === 'APPROVED' && (
+                {(loan.status === 'APPROVED' || loan.status === 'REPAID') && (
                   <div className="mt-6">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-charcoal-muted">Repayment Progress</span>
-                      <span className="font-mono text-sage">{progressPercent.toFixed(0)}%</span>
+                      <span className="font-mono text-sage">{loan.progress.toFixed(0)}%</span>
                     </div>
                     <div className="h-3 bg-cream-dim rounded-full overflow-hidden">
                       <motion.div
                         className="h-full bg-sage rounded-full"
                         initial={{ width: 0 }}
-                        animate={{ width: `${progressPercent}%` }}
+                        animate={{ width: `${loan.progress}%` }}
                         transition={{ duration: 0.5 }}
                       />
                     </div>
                     <div className="flex justify-between mt-2 text-sm">
-                      <span className="text-charcoal-muted">Paid: {formatCurrency(loanDetails.repaidAmount)}</span>
-                      <span className="text-charcoal-muted">Remaining: {formatCurrency(remainingBalance)}</span>
+                      <span className="text-charcoal-muted">Paid: {formatCurrency(loan.totalRepaid)}</span>
+                      <span className="text-charcoal-muted">Remaining: {formatCurrency(loan.remainingBalance)}</span>
                     </div>
                   </div>
                 )}
@@ -230,14 +373,14 @@ export default function LoanDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {loanDetails.repaymentHistory.length === 0 ? (
+                {!loan.repayments || loan.repayments.length === 0 ? (
                   <div className="text-center py-8">
-                    <DollarSign className="w-12 h-12 text-charcoal-muted mx-auto mb-3" />
+                    <PhilippinePeso className="w-12 h-12 text-charcoal-muted mx-auto mb-3" />
                     <p className="text-charcoal-muted">No repayments recorded yet</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {loanDetails.repaymentHistory.map((payment, index) => (
+                    {loan.repayments.map((payment: LoanData['repayments'][0], index: number) => (
                       <motion.div
                         key={payment.id}
                         initial={{ opacity: 0, x: -10 }}
@@ -250,9 +393,9 @@ export default function LoanDetailPage() {
                             <CheckCircle className="w-5 h-5 text-green-600" />
                           </div>
                           <div>
-                            <p className="font-medium text-charcoal">{formatDate(payment.date)}</p>
+                            <p className="font-medium text-charcoal">{formatDate(payment.paymentDate)}</p>
                             <p className="text-sm text-charcoal-muted">
-                              Principal: {formatCurrency(payment.principalPaid)} &middot; Interest: {formatCurrency(payment.interestPaid)}
+                              Principal: {formatCurrency(payment.principal)} &middot; Interest: {formatCurrency(payment.interest)}
                             </p>
                           </div>
                         </div>
@@ -278,14 +421,14 @@ export default function LoanDetailPage() {
               <CardContent>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-sage flex items-center justify-center text-white text-lg font-semibold">
-                    {loanDetails.borrowerName.charAt(0)}
+                    {loan.borrowerName?.charAt(0) || '?'}
                   </div>
                   <div>
-                    <p className="font-medium text-charcoal">{loanDetails.borrowerName}</p>
-                    <p className="text-sm text-charcoal-muted">{loanDetails.borrowerEmail}</p>
+                    <p className="font-medium text-charcoal">{loan.borrowerName || 'Unknown'}</p>
+                    <p className="text-sm text-charcoal-muted">{loan.borrowerEmail || 'No email'}</p>
                   </div>
                 </div>
-                {loanDetails.isNonMember && (
+                {loan.isNonMember && (
                   <div className="mt-3">
                     <Badge variant="warning">Non-Member</Badge>
                   </div>
@@ -302,18 +445,17 @@ export default function LoanDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {loanDetails.coMakers.length === 0 ? (
+                {!loan.coMakers || loan.coMakers.length === 0 ? (
                   <p className="text-charcoal-muted text-sm">No co-makers required</p>
                 ) : (
                   <div className="space-y-3">
-                    {loanDetails.coMakers.map((coMaker) => (
+                    {loan.coMakers.map((coMaker: LoanData['coMakers'][0]) => (
                       <div key={coMaker.id} className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-terracotta-dim flex items-center justify-center text-terracotta font-semibold">
                           {coMaker.name.charAt(0)}
                         </div>
                         <div>
                           <p className="font-medium text-charcoal">{coMaker.name}</p>
-                          <p className="text-xs text-charcoal-muted">{coMaker.email}</p>
                         </div>
                       </div>
                     ))}
@@ -331,21 +473,21 @@ export default function LoanDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {loanDetails.approvedDate && (
+                {loan.approvedDate && (
                   <div className="flex justify-between text-sm">
                     <span className="text-charcoal-muted">Approved</span>
-                    <span className="text-charcoal">{formatDate(loanDetails.approvedDate)}</span>
+                    <span className="text-charcoal">{formatDate(loan.approvedDate)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-charcoal-muted">Due Date</span>
-                  <span className="font-medium text-charcoal">{formatDate(loanDetails.dueDate)}</span>
+                  <span className="font-medium text-charcoal">{formatDate(loan.dueDate)}</span>
                 </div>
-                {loanDetails.status === 'APPROVED' && remainingBalance > 0 && (
+                {loan.status === 'APPROVED' && loan.remainingBalance > 0 && (
                   <div className="pt-3 border-t border-black/[0.06]">
                     <div className="flex items-center gap-2 text-yellow-600">
                       <AlertTriangle className="w-4 h-4" />
-                      <span className="text-sm">{formatCurrency(remainingBalance)} remaining</span>
+                      <span className="text-sm">{formatCurrency(loan.remainingBalance)} remaining</span>
                     </div>
                   </div>
                 )}
@@ -358,11 +500,11 @@ export default function LoanDetailPage() {
         <Modal isOpen={showApproveModal} onClose={() => setShowApproveModal(false)} title="Approve Loan">
           <div className="space-y-4">
             <p className="text-charcoal-secondary">
-              Are you sure you want to approve this loan of <strong>{formatCurrency(loanDetails.amount)}</strong> for <strong>{loanDetails.borrowerName}</strong>?
+              Are you sure you want to approve this loan of <strong>{formatCurrency(loan.amount)}</strong> for <strong>{loan.borrowerName || 'Unknown'}</strong>?
             </p>
             <div className="bg-sage-dim rounded-lg p-4">
               <p className="text-sm text-sage">
-                The borrower will be notified and the loan will be marked as active. The due date will be set to {formatDate(loanDetails.dueDate)}.
+                The borrower will be notified and the loan will be marked as active. The due date will be set to {formatDate(loan.dueDate)}.
               </p>
             </div>
             <div className="flex gap-3 pt-4">
@@ -380,7 +522,7 @@ export default function LoanDetailPage() {
         <Modal isOpen={showRejectModal} onClose={() => setShowRejectModal(false)} title="Reject Loan">
           <div className="space-y-4">
             <p className="text-charcoal-secondary">
-              Are you sure you want to reject this loan request from <strong>{loanDetails.borrowerName}</strong>?
+              Are you sure you want to reject this loan request from <strong>{loan.borrowerName || 'Unknown'}</strong>?
             </p>
             <div className="bg-danger/5 rounded-lg p-4 border border-danger/20">
               <p className="text-sm text-danger">
@@ -404,7 +546,7 @@ export default function LoanDetailPage() {
             <div className="bg-cream-dim rounded-lg p-4">
               <div className="flex justify-between mb-2">
                 <span className="text-charcoal-muted">Remaining Balance</span>
-                <span className="font-mono text-charcoal">{formatCurrency(remainingBalance)}</span>
+                <span className="font-mono text-charcoal">{formatCurrency(loan.remainingBalance)}</span>
               </div>
             </div>
             <div>
@@ -413,7 +555,8 @@ export default function LoanDetailPage() {
                 type="number"
                 placeholder="Enter amount"
                 className="w-full px-4 py-3 rounded-lg border border-black/[0.08] bg-white focus:outline-none focus:ring-2 focus:ring-sage/20 focus:border-sage"
-                defaultValue={remainingBalance}
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
               />
             </div>
             <div className="flex gap-3 pt-4">

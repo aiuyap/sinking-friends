@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { MemberCard } from '@/components/members/MemberCard';
 import { InviteMemberModal } from '@/components/members/InviteMemberModal';
 import { formatCurrency } from '@/lib/utils';
-import { ArrowLeft, UserPlus, Users, DollarSign, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, UserPlus, Users, PhilippinePeso, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 interface ApiMember {
   id: string;
@@ -205,7 +205,7 @@ export default function GroupMembersPage() {
               <Card>
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 bg-terracotta-dim rounded-lg flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-terracotta" />
+                    <PhilippinePeso className="w-5 h-5 text-terracotta" />
                   </div>
                   <div>
                     <p className="text-sm text-charcoal-muted">Total Pool</p>

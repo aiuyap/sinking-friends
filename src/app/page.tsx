@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import { Users, DollarSign, TrendingUp, Shield, Calendar, ArrowRight, CheckCircle } from 'lucide-react'
+import { Users, PhilippinePeso, TrendingUp, Shield, Calendar, ArrowRight, CheckCircle } from 'lucide-react'
 
 export default function LandingPage() {
   const { user, signInWithGoogle, loading } = useAuth()
@@ -30,7 +30,7 @@ export default function LandingPage() {
       description: 'Set your personal schedule and contribute every payday.',
     },
     {
-      icon: DollarSign,
+      icon: PhilippinePeso,
       title: 'Access to Loans',
       description: 'Borrow against pooled money with co-maker support at 5% monthly interest.',
     },
@@ -76,7 +76,7 @@ export default function LandingPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-sage rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-white" />
+                <PhilippinePeso className="w-6 h-6 text-white" />
               </div>
               <span className="font-display text-xl text-charcoal">Sinking Fund</span>
             </div>
@@ -271,7 +271,7 @@ export default function LandingPage() {
             <Card className="text-center">
               <CardContent className="p-8">
                 <div className="w-16 h-16 bg-sage-dim rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <DollarSign className="w-8 h-8 text-sage" />
+                  <PhilippinePeso className="w-8 h-8 text-sage" />
                 </div>
                 <h3 className="font-display text-2xl text-charcoal mb-2">
                   5% Monthly Interest
@@ -317,7 +317,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center gap-3 mb-6">
             <div className="w-10 h-10 bg-sage rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-white" />
+              <PhilippinePeso className="w-6 h-6 text-white" />
             </div>
             <span className="font-display text-xl">Sinking Fund</span>
           </div>

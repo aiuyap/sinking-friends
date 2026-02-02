@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { formatCurrency } from '@/lib/utils'
-import { DollarSign, PieChart, Users, CheckCircle, XCircle } from 'lucide-react'
+import { PhilippinePeso, PieChart, Users, CheckCircle, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface MemberDistribution {
@@ -49,7 +49,7 @@ export function DistributionReport({
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-sage-dim rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-sage" />
+                <PhilippinePeso className="w-5 h-5 text-sage" />
               </div>
               <p className="text-sm text-charcoal-muted">Total Pool</p>
             </div>

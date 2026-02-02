@@ -3,6 +3,70 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, isGroupAdmin } from '@/lib/auth'
 
+// Helper function to format loan data consistently
+async function formatLoanResponse(loan: any, userId: string, isAdmin: boolean) {
+  const totalRepaid = loan.repayments?.reduce((sum: number, r: any) => sum + r.amount, 0) || 0;
+  const totalDue = loan.amount + loan.totalInterest;
+  const remainingBalance = Math.max(0, totalDue - totalRepaid);
+  const isBorrower = loan.borrowerId === userId;
+  const isCoMaker = loan.coMakers?.some((cm: any) => cm.userId === userId) || false;
+
+  return {
+    id: loan.id,
+    amount: loan.amount,
+    interestRate: loan.interestRate,
+    totalInterest: loan.totalInterest,
+    termMonths: loan.termMonths,
+    status: loan.status,
+    totalDue,
+    dueDate: loan.dueDate,
+    approvedDate: loan.approvedDate,
+    createdAt: loan.createdAt,
+    
+    // Borrower info
+    borrowerId: loan.borrowerId,
+    borrowerName: loan.isNonMember 
+      ? loan.nonMemberName 
+      : (loan.borrower?.name || 'Unknown'),
+    borrowerEmail: loan.isNonMember ? null : loan.borrower?.email,
+    borrowerAvatar: loan.isNonMember ? null : loan.borrower?.image,
+    isNonMember: loan.isNonMember,
+    
+    // Group info
+    groupId: loan.groupId,
+    groupName: loan.group?.name || 'Unknown',
+    
+    // Co-makers
+    coMakers: (loan.coMakers || []).map((cm: any) => ({
+      id: cm.userId,
+      name: cm.user?.name || 'Unknown',
+      avatar: cm.user?.image
+    })),
+    
+    // Repayments
+    repayments: (loan.repayments || []).map((r: any) => ({
+      id: r.id,
+      amount: r.amount,
+      interest: r.interest,
+      principal: r.principal,
+      paymentDate: r.paymentDate,
+      note: r.note
+    })),
+    
+    // Calculated fields
+    totalRepaid,
+    remainingBalance,
+    progress: totalDue > 0 ? Math.min(100, (totalRepaid / totalDue) * 100) : 0,
+    
+    // Permissions
+    isMyLoan: isBorrower,
+    isCoMaker,
+    canApprove: isAdmin && loan.status === 'PENDING',
+    canRepay: (isBorrower || isAdmin) && loan.status === 'APPROVED' && remainingBalance > 0,
+    canEdit: isAdmin && loan.status === 'PENDING'
+  };
+}
+
 // GET /api/loans/[id] - Get loan details
 export async function GET(
   request: NextRequest,
@@ -68,66 +132,8 @@ export async function GET(
       );
     }
 
-    // Calculate repayment stats
-    const totalRepaid = loan.repayments.reduce((sum, r) => sum + r.amount, 0);
-    const totalDue = loan.amount + loan.totalInterest;
-    const remainingBalance = Math.max(0, totalDue - totalRepaid);
-
-    // Format the response
-    const formattedLoan = {
-      id: loan.id,
-      amount: loan.amount,
-      interestRate: loan.interestRate,
-      totalInterest: loan.totalInterest,
-      termMonths: loan.termMonths,
-      status: loan.status,
-      totalDue,
-      dueDate: loan.dueDate,
-      approvedDate: loan.approvedDate,
-      createdAt: loan.createdAt,
-      
-      // Borrower info
-      borrowerId: loan.borrowerId,
-      borrowerName: loan.isNonMember 
-        ? loan.nonMemberName 
-        : (loan.borrower?.name || 'Unknown'),
-      borrowerEmail: loan.isNonMember ? null : loan.borrower?.email,
-      borrowerAvatar: loan.isNonMember ? null : loan.borrower?.image,
-      isNonMember: loan.isNonMember,
-      
-      // Group info
-      groupId: loan.groupId,
-      groupName: loan.group.name,
-      
-      // Co-makers
-      coMakers: loan.coMakers.map(cm => ({
-        id: cm.userId,
-        name: cm.user?.name || 'Unknown',
-        avatar: cm.user?.image
-      })),
-      
-      // Repayments
-      repayments: loan.repayments.map(r => ({
-        id: r.id,
-        amount: r.amount,
-        interest: r.interest,
-        principal: r.principal,
-        paymentDate: r.paymentDate,
-        note: r.note
-      })),
-      
-      // Calculated fields
-      totalRepaid,
-      remainingBalance,
-      progress: totalDue > 0 ? Math.min(100, (totalRepaid / totalDue) * 100) : 0,
-      
-      // Permissions
-      isMyLoan: isBorrower,
-      isCoMaker,
-      canApprove: isAdmin && loan.status === 'PENDING',
-      canRepay: (isBorrower || isAdmin) && loan.status === 'APPROVED' && remainingBalance > 0,
-      canEdit: isAdmin && loan.status === 'PENDING'
-    };
+    // Format the response using helper function
+    const formattedLoan = await formatLoanResponse(loan, user.id, isAdmin);
 
     return NextResponse.json({ loan: formattedLoan });
   } catch (error) {
@@ -251,7 +257,25 @@ export async function POST(
         });
       }
 
-      return NextResponse.json({ repayment, message: 'Repayment recorded successfully' });
+      // Fetch updated loan with all relations and format
+      const updatedLoanWithRelations = await prisma.loan.findUnique({
+        where: { id: loanId },
+        include: {
+          group: true,
+          borrower: { select: { id: true, name: true, email: true, image: true } },
+          coMakers: { include: { user: { select: { id: true, name: true, image: true } } } },
+          repayments: { orderBy: { paymentDate: 'desc' } }
+        }
+      });
+
+      const isAdmin = await isGroupAdmin(user.id, updatedLoanWithRelations?.groupId || '');
+      const formattedLoan = await formatLoanResponse(updatedLoanWithRelations, user.id, isAdmin);
+      
+      return NextResponse.json({ 
+        repayment, 
+        loan: formattedLoan,
+        message: 'Repayment recorded successfully' 
+      });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
@@ -317,7 +341,7 @@ export async function PUT(
     }
 
     if (action === 'approve') {
-      const updatedLoan = await prisma.loan.update({
+      await prisma.loan.update({
         where: { id: loanId },
         data: { 
           status: 'APPROVED', 
@@ -348,9 +372,21 @@ export async function PUT(
         });
       }
 
-      return NextResponse.json({ loan: updatedLoan });
+      // Fetch updated loan with all relations and format
+      const updatedLoanWithRelations = await prisma.loan.findUnique({
+        where: { id: loanId },
+        include: {
+          group: true,
+          borrower: { select: { id: true, name: true, email: true, image: true } },
+          coMakers: { include: { user: { select: { id: true, name: true, image: true } } } },
+          repayments: { orderBy: { paymentDate: 'desc' } }
+        }
+      });
+
+      const formattedLoan = await formatLoanResponse(updatedLoanWithRelations, user.id, isAdmin);
+      return NextResponse.json({ loan: formattedLoan });
     } else if (action === 'reject') {
-      const updatedLoan = await prisma.loan.update({
+      await prisma.loan.update({
         where: { id: loanId },
         data: { status: 'REJECTED' },
       });
@@ -377,7 +413,19 @@ export async function PUT(
         });
       }
 
-      return NextResponse.json({ loan: updatedLoan });
+      // Fetch updated loan with all relations and format
+      const updatedLoanWithRelations = await prisma.loan.findUnique({
+        where: { id: loanId },
+        include: {
+          group: true,
+          borrower: { select: { id: true, name: true, email: true, image: true } },
+          coMakers: { include: { user: { select: { id: true, name: true, image: true } } } },
+          repayments: { orderBy: { paymentDate: 'desc' } }
+        }
+      });
+
+      const formattedLoan = await formatLoanResponse(updatedLoanWithRelations, user.id, isAdmin);
+      return NextResponse.json({ loan: formattedLoan });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

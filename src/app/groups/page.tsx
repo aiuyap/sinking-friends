@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { formatCurrency } from '@/lib/utils'
 import { 
-  DollarSign, 
+  PhilippinePeso, 
   Users, 
   Plus, 
   ArrowRight, 
@@ -138,7 +138,7 @@ export default function GroupsPage() {
           <Card>
             <CardContent className="flex items-center gap-4 p-4">
               <div className="w-12 h-12 bg-sage-dim rounded-xl flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-sage" />
+                <PhilippinePeso className="w-6 h-6 text-sage" />
               </div>
               <div>
                 <p className="text-sm text-charcoal-muted">Total Pool Value</p>
@@ -230,7 +230,7 @@ export default function GroupsPage() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-sage rounded-lg flex items-center justify-center">
-                          <DollarSign className="w-6 h-6 text-white" />
+                          <PhilippinePeso className="w-6 h-6 text-white" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export default function GroupsPage() {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2 text-charcoal-muted">
-                          <DollarSign className="w-4 h-4" />
+                          <PhilippinePeso className="w-4 h-4" />
                           <span>Pool: {formatCurrency(group.totalPool)}</span>
                         </div>
                         <div className="flex items-center gap-1 text-charcoal-muted">

@@ -41,6 +41,17 @@ Converted payment history from mock data to real database data:
 - Sorted by date (descending) with combined view of all transactions
 - Dashboard page now displays real payment history from database
 
+### 6. Loan Detail Page - Real Data ✅
+Converted loan detail page from mock data to real database data:
+- Loan detail page (`/groups/[id]/loans/[loanId]`) now fetches real data from `/api/loans/[id]`
+- Displays real borrower name, amount, interest rate, and status
+- Shows real repayment history from database
+- Displays real co-makers with names
+- Connected approve/reject/payment actions to real API endpoints
+- Added permission-based UI (buttons show/hide based on user role)
+- Added loading states and error handling
+- Removed hardcoded "Jane Doe" mock data
+
 ---
 
 ## Phase 4: Members API & UI ✅ COMPLETE
@@ -202,6 +213,36 @@ fetch('/api/groups/GROUP_ID/members')
 2. **Expected:** Green success toast: "Your loan request for ₱X has been submitted successfully"
 3. **Expected:** Redirected to loans page
 
+### Test 5: Loan Detail Page (Real Data)
+
+**Test Viewing Loan Details:**
+1. Navigate to a group → Click "Loans" tab
+2. Click "View" button on any loan
+3. **Expected:** Loan detail page loads with real data:
+   - Borrower name (not "Jane Doe")
+   - Real loan amount from database
+   - Correct interest rate
+   - Actual repayment history
+   - Real co-makers list
+
+**Test Permission-Based Actions:**
+1. As admin, view a pending loan
+2. **Expected:** See "Approve" and "Reject" buttons
+3. As regular member, view same loan
+4. **Expected:** No action buttons (view-only)
+5. As borrower, view your approved loan
+6. **Expected:** See "Record Payment" button
+
+**Test Loan Actions:**
+1. As admin, click "Approve" on pending loan
+2. **Expected:** Green success toast appears
+3. **Expected:** Loan status changes to "Active"
+4. **Expected:** Borrower receives notification
+5. As borrower, click "Record Payment"
+6. Enter payment amount → Submit
+7. **Expected:** Payment recorded, balance updates
+8. **Expected:** Repayment history shows new entry
+
 ---
 
 ## What's Working Now - COMPLETE! ✅
@@ -214,6 +255,7 @@ fetch('/api/groups/GROUP_ID/members')
 - `/groups/[id]` - Real group details with all tabs
 - `/groups/[id]/members` - Real member list with stats
 - `/groups/[id]/loans` - Real loan table
+- `/groups/[id]/loans/[loanId]` ⭐ **NOW REAL DATA** - Loan details with borrower info, repayments, co-makers
 - `/groups/[id]/contributions` - Real contribution tracking
 - `/groups/[id]/settings` - Real settings with admin controls
 
@@ -262,6 +304,7 @@ POST /api/groups                       ✅ Create with full config
 GET  /api/groups/[id]/members          ✅ Real data + auth
 GET  /api/groups/[id]/loans            ✅ Real data
 POST /api/groups/[id]/loans            ✅ Create loan
+GET  /api/loans/[id]                   ✅ Loan details + repayments + co-makers
 GET  /api/groups/[id]/loan-eligibility ✅ Check eligibility
 GET  /api/groups/[id]/contributions    ✅ Real data
 GET  /api/notifications                ✅ Real data

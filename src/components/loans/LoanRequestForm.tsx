@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { useToast } from '@/components/ui/Toast'
 import { formatCurrency } from '@/lib/utils'
-import { DollarSign, AlertCircle, Info, Users, Loader2 } from 'lucide-react'
+import { PhilippinePeso, AlertCircle, Info, Users, Loader2 } from 'lucide-react'
 
 interface LoanRequestFormProps {
   groupId: string
@@ -232,7 +232,7 @@ export default function LoanRequestForm({ groupId, isOpen: controlledIsOpen, onC
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <DollarSign className="w-5 h-5 text-sage" />
+              <PhilippinePeso className="w-5 h-5 text-sage" />
               Loan Amount
             </CardTitle>
           </CardHeader>
@@ -244,7 +244,7 @@ export default function LoanRequestForm({ groupId, isOpen: controlledIsOpen, onC
               value={amount}
               onChange={handleAmountChange}
               error={amount && enteredAmount > maxLoan ? `Maximum is ${formatCurrency(maxLoan)}` : undefined}
-              icon={<DollarSign className="w-4 h-4" />}
+              icon={<PhilippinePeso className="w-4 h-4" />}
             />
 
             {/* Amount Slider */}

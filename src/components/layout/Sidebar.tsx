@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { 
   LayoutDashboard, 
   Users, 
-  DollarSign,
+  PhilippinePeso,
   Settings, 
   LogOut
 } from 'lucide-react'
@@ -36,7 +36,7 @@ export function Sidebar({ user, onSignOut, mobile = false }: SidebarProps) {
         <div className="flex items-center h-20 px-8 border-b border-black/[0.06]">
           <Link href="/dashboard" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-sage rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-white" />
+              <PhilippinePeso className="w-6 h-6 text-white" />
             </div>
             <span className="font-display text-xl text-charcoal">Sinking Fund</span>
           </Link>

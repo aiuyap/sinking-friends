@@ -303,6 +303,27 @@ async function main() {
   console.log('   - Co-maker: Aiu');
   console.log('   - Interest earned: ₱800\n');
 
+  // Loan 4: Pending loan - Juan requesting 12,000 (for rejection testing)
+  const loan4 = await prisma.loan.create({
+    data: {
+      groupId: group.id,
+      borrowerId: users[1].id,
+      isNonMember: false,
+      amount: 12000,
+      interestRate: 5.0,
+      totalInterest: 1200,
+      termMonths: 2,
+      status: 'PENDING',
+      approvedDate: new Date('2026-02-15'),
+      dueDate: new Date('2026-04-15'),
+      repaidAmount: 0,
+      isFullyRepaid: false,
+    },
+  });
+
+  console.log('✅ Created Loan 4: Juan - ₱12,000 (Pending approval)');
+  console.log('   - Ready for rejection testing\n');
+
   // Create some notifications
   await prisma.notification.createMany({
     data: [
@@ -330,10 +351,18 @@ async function main() {
         actionUrl: `/groups/${group.id}/loans/${loan2.id}`,
         isRead: false,
       },
+      {
+        userId: users[0].id,
+        type: 'LOAN_APPROVED',
+        title: 'New Loan Request',
+        message: 'Juan dela Cruz requested a loan of ₱12,000',
+        actionUrl: `/groups/${group.id}/loans/${loan4.id}`,
+        isRead: false,
+      },
     ],
   });
 
-  console.log('✅ Created 3 notifications\n');
+  console.log('✅ Created 4 notifications\n');
 
   console.log('🎉 Database seed completed successfully!');
   console.log('\n📊 Summary:');
@@ -341,9 +370,9 @@ async function main() {
   console.log('   • 1 Group created');
   console.log('   • 4 Group members');
   console.log('   • 32 Contributions (24 paid, 8 pending)');
-  console.log('   • 3 Loans (1 active, 1 pending, 1 repaid)');
+  console.log('   • 4 Loans (1 active, 2 pending, 1 repaid)');
   console.log('   • 3 Repayment records');
-  console.log('   • 3 Notifications\n');
+  console.log('   • 4 Notifications\n');
 }
 
 main()

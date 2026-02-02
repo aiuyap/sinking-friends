@@ -7,10 +7,10 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
-import { ArrowLeft, Plus, DollarSign, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, PhilippinePeso, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 type LoanStatus = 'PENDING' | 'APPROVED' | 'REPAID' | 'DEFAULTED' | 'REJECTED';
-type LoanTab = 'ALL' | 'PENDING' | 'ACTIVE' | 'REPAID';
+type LoanTab = 'ALL' | 'PENDING' | 'ACTIVE' | 'REPAID' | 'REJECTED';
 
 type Loan = {
   id: string;
@@ -28,6 +28,7 @@ type LoanStats = {
   active: number;
   repaid: number;
   defaulted: number;
+  rejected: number;
   totalLent: number;
   totalRepaid: number;
   outstanding: number;
@@ -57,7 +58,7 @@ type ApiResponse = {
 
 const statusVariants: Record<LoanStatus, { variant: 'warning' | 'default' | 'success' | 'danger'; color: string; icon: React.ElementType }> = {
   PENDING: { variant: 'warning', color: 'text-yellow-600 bg-yellow-50', icon: Clock },
-  APPROVED: { variant: 'default', color: 'text-sage bg-sage/10', icon: DollarSign },
+  APPROVED: { variant: 'default', color: 'text-sage bg-sage/10', icon: PhilippinePeso },
   REPAID: { variant: 'success', color: 'text-green-600 bg-green-50', icon: CheckCircle },
   DEFAULTED: { variant: 'danger', color: 'text-red-600 bg-red-50', icon: AlertCircle },
   REJECTED: { variant: 'danger', color: 'text-red-600 bg-red-50', icon: AlertCircle }
@@ -76,6 +77,7 @@ export default function LoanListPage() {
     active: 0,
     repaid: 0,
     defaulted: 0,
+    rejected: 0,
     totalLent: 0,
     totalRepaid: 0,
     outstanding: 0,
@@ -125,7 +127,8 @@ export default function LoanListPage() {
       ALL: () => true,
       PENDING: loan => loan.status === 'PENDING',
       ACTIVE: loan => loan.status === 'APPROVED',
-      REPAID: loan => loan.status === 'REPAID'
+      REPAID: loan => loan.status === 'REPAID',
+      REJECTED: loan => loan.status === 'REJECTED'
     };
     return statusMap[selectedTab](loan);
   });
@@ -139,6 +142,7 @@ export default function LoanListPage() {
     { id: 'PENDING', label: 'Pending', count: stats.pending },
     { id: 'ACTIVE', label: 'Active', count: stats.active },
     { id: 'REPAID', label: 'Repaid', count: stats.repaid },
+    { id: 'REJECTED', label: 'Rejected', count: stats.rejected },
   ];
 
   return (
@@ -212,7 +216,7 @@ export default function LoanListPage() {
               <Card>
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 bg-sage-dim rounded-lg flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-sage" />
+                    <PhilippinePeso className="w-5 h-5 text-sage" />
                   </div>
                   <div>
                     <p className="text-sm text-charcoal-muted">Active</p>
@@ -234,7 +238,7 @@ export default function LoanListPage() {
               <Card>
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 bg-terracotta-dim rounded-lg flex items-center justify-center">
-                    <DollarSign className="w-5 h-5 text-terracotta" />
+                    <PhilippinePeso className="w-5 h-5 text-terracotta" />
                   </div>
                   <div>
                     <p className="text-sm text-charcoal-muted">Total Lent</p>
@@ -272,7 +276,7 @@ export default function LoanListPage() {
             {filteredLoans.length === 0 ? (
               <Card className="text-center py-12">
                 <CardContent>
-                  <DollarSign className="w-16 h-16 text-charcoal-muted mx-auto mb-4" />
+                  <PhilippinePeso className="w-16 h-16 text-charcoal-muted mx-auto mb-4" />
                   <h3 className="font-display text-xl text-charcoal mb-2">No Loans Found</h3>
                   <p className="text-charcoal-muted mb-6">
                     {selectedTab === 'ALL' 

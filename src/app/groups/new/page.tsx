@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input, TextArea } from '@/components/ui/Input'
 import { useToast } from '@/components/ui/Toast'
-import { ArrowLeft, Plus, DollarSign, Calendar, Clock } from 'lucide-react'
+import { ArrowLeft, Plus, PhilippinePeso, Calendar, Clock } from 'lucide-react'
 
 export default function NewGroupPage() {
   const router = useRouter()
@@ -123,7 +123,7 @@ export default function NewGroupPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-sage" />
+                <PhilippinePeso className="w-5 h-5 text-sage" />
                 Loan Settings
               </CardTitle>
             </CardHeader>

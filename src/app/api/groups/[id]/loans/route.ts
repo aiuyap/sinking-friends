@@ -104,6 +104,7 @@ export async function GET(
       active: loans.filter(l => l.status === 'APPROVED').length,
       repaid: loans.filter(l => l.status === 'REPAID').length,
       defaulted: loans.filter(l => l.status === 'DEFAULTED').length,
+      rejected: loans.filter(l => l.status === 'REJECTED').length,
       totalLent: loans
         .filter(l => l.status === 'APPROVED')
         .reduce((sum, l) => sum + l.amount, 0),
