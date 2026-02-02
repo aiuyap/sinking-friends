@@ -324,6 +324,51 @@ async function main() {
   console.log('✅ Created Loan 4: Juan - ₱12,000 (Pending approval)');
   console.log('   - Ready for rejection testing\n');
 
+  // Loan 5: Active loan - Aiu (current user) borrowed 20,000 (for dashboard testing)
+  const loan5 = await prisma.loan.create({
+    data: {
+      groupId: group.id,
+      borrowerId: users[0].id,
+      isNonMember: false,
+      amount: 20000,
+      interestRate: 5.0,
+      totalInterest: 2000,
+      termMonths: 2,
+      status: 'APPROVED',
+      adminApprovalId: users[0].id,
+      adminApprovedAt: new Date('2026-02-10'),
+      approvedDate: new Date('2026-02-10'),
+      dueDate: new Date('2026-04-10'),
+      repaidAmount: 8000,
+      isFullyRepaid: false,
+    },
+  });
+
+  // Add repayments for loan 5
+  await prisma.loanRepayment.createMany({
+    data: [
+      {
+        loanId: loan5.id,
+        amount: 4400,
+        principal: 4000,
+        interest: 400,
+        paymentDate: new Date('2026-02-25'),
+      },
+      {
+        loanId: loan5.id,
+        amount: 3600,
+        principal: 3200,
+        interest: 400,
+        paymentDate: new Date('2026-03-10'),
+      },
+    ],
+  });
+
+  console.log('✅ Created Loan 5: Aiu - ₱20,000 (Active, 40% repaid)');
+  console.log('   - No co-maker required');
+  console.log('   - 2 repayment records');
+  console.log('   - For dashboard active loans testing\n');
+
   // Create some notifications
   await prisma.notification.createMany({
     data: [
@@ -359,6 +404,14 @@ async function main() {
         actionUrl: `/groups/${group.id}/loans/${loan4.id}`,
         isRead: false,
       },
+      {
+        userId: users[0].id,
+        type: 'LOAN_APPROVED',
+        title: 'Loan Approved',
+        message: 'Your loan request for ₱20,000 has been approved',
+        actionUrl: `/groups/${group.id}/loans/${loan5.id}`,
+        isRead: true,
+      },
     ],
   });
 
@@ -370,9 +423,9 @@ async function main() {
   console.log('   • 1 Group created');
   console.log('   • 4 Group members');
   console.log('   • 32 Contributions (24 paid, 8 pending)');
-  console.log('   • 4 Loans (1 active, 2 pending, 1 repaid)');
-  console.log('   • 3 Repayment records');
-  console.log('   • 4 Notifications\n');
+  console.log('   • 5 Loans (2 active, 2 pending, 1 repaid)');
+  console.log('   • 5 Repayment records');
+  console.log('   • 5 Notifications\n');
 }
 
 main()
