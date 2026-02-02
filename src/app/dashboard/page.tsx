@@ -115,7 +115,7 @@ export default function DashboardPage() {
                     <span className="text-charcoal-muted">Total Active</span>
                     <span className="font-display text-xl text-charcoal">{stats.activeLoans}</span>
                   </div>
-                  <Button onClick={() => router.push('/groups')} variant="outline" className="w-full">
+                  <Button onClick={() => router.push('/my-loans')} variant="outline" className="w-full">
                     View All Loans
                   </Button>
                 </div>

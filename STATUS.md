@@ -1,6 +1,6 @@
 # Sinking Fund Platform - Implementation Status
 
-**Last Updated**: February 3, 2026 (8:45 PM)  
+**Last Updated**: February 3, 2026 (10:30 PM)  
 **Current Phase**: Phase 6 - Loan Request Form Improvements ✅ COMPLETE  
 **Build Status**: ✅ PASSING
 
@@ -91,6 +91,21 @@ Fixed card layout issues on the groups page:
 - Added proper text truncation for long group names
 - Added `flex-shrink-0` to prevent icon squishing
 - Cards now display properly on all screen sizes
+
+### 12. My Loans Page ✅
+Created dedicated page for users to view all their loans:
+- **New Page**: `/my-loans` - Shows all loans where user is the borrower
+- **New API**: `GET /api/my-loans` - Fetches user's loans across all groups
+- **Features**:
+  - Stats overview (Total Loans, Active, Total Borrowed, Total Repaid)
+  - Tab filters (All, Pending, Active, Repaid, Rejected)
+  - 2-column responsive card layout
+  - Progress bars for active loans with repayment tracking
+  - Due Date label prominently displayed for active loans (bold date)
+  - Clean footer design (no co-maker section)
+  - Click card to view loan details
+- **Updated Dashboard**: "View All Loans" button now routes to `/my-loans`
+- **Test Data**: Added Loan 5 (Aiu - ₱20,000 active loan) for dashboard testing
 
 ---
 
@@ -296,6 +311,7 @@ fetch('/api/groups/GROUP_ID/members')
 - `/groups/[id]/members` - Real member list with stats
 - `/groups/[id]/loans` - Real loan table
 - `/groups/[id]/loans/[loanId]` ⭐ **NOW REAL DATA** - Loan details with borrower info, repayments, co-makers
+- `/my-loans` ⭐ **NEW** - View all your loans across groups
 - `/groups/[id]/contributions` - Real contribution tracking
 - `/groups/[id]/settings` - Real settings with admin controls
 
@@ -310,6 +326,7 @@ fetch('/api/groups/GROUP_ID/members')
 - ✅ **Notifications** - Real-time updates with bell icon
 - ✅ **Toast System** - Non-blocking alerts with auto-dismiss
 - ✅ **Philippine Peso Icons** - All currency symbols show ₱ (appropriate for PH users)
+- ✅ **My Loans Page** - View all your loans across groups with stats and filters
 
 ---
 
@@ -334,7 +351,7 @@ fetch('/api/groups/GROUP_ID/members')
 - **Members**: 4 (Aiu - Admin, Juan, Maria, Pedro)
 - **Total Pool**: ₱48,000
 - **Contributions**: 32 records
-- **Loans**: 4 (1 active, 2 pending ⭐ **REJECTABLE**, 1 repaid)
+- **Loans**: 5 (2 active ⭐ **AIU HAS ACTIVE LOAN**, 2 pending, 1 repaid)
 
 ### API Endpoints with Real Data
 ```
@@ -346,6 +363,7 @@ GET  /api/groups/[id]/members          ✅ Real data + auth
 GET  /api/groups/[id]/loans            ✅ Real data
 POST /api/groups/[id]/loans            ✅ Create loan
 GET  /api/loans/[id]                   ✅ Loan details + repayments + co-makers
+GET  /api/my-loans                     ✅ User's loans across all groups
 GET  /api/groups/[id]/loan-eligibility ✅ Check eligibility
 GET  /api/groups/[id]/contributions    ✅ Real data
 GET  /api/notifications                ✅ Real data
