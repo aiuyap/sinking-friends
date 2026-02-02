@@ -1,6 +1,6 @@
 # Sinking Fund Platform - Implementation Status
 
-**Last Updated**: February 2, 2026 (8:00 PM)  
+**Last Updated**: February 3, 2026 (12:30 AM)  
 **Current Phase**: Phase 6 - Loan Request Form Improvements ✅ COMPLETE  
 **Build Status**: ✅ PASSING
 
@@ -51,6 +51,36 @@ Converted loan detail page from mock data to real database data:
 - Added permission-based UI (buttons show/hide based on user role)
 - Added loading states and error handling
 - Removed hardcoded "Jane Doe" mock data
+
+### 7. Philippine Peso Currency Icons ✅
+Replaced all DollarSign ($) icons with PhilippinePeso (₱) icons:
+- Updated `lucide-react` package to v0.474.0 (supports PhilippinePeso icon)
+- Changed 45+ icon instances across 16 files
+- All monetary indicators now show ₱ symbol appropriate for Philippines
+- Updated imports in: dashboard, groups, loans, members, settings, components
+
+### 8. Rejected Loans Tab ✅
+Added "Rejected" tab to loans list page:
+- New tab filters and displays rejected loans
+- Backend API updated to include `rejected` count in stats
+- Frontend updated with REJECTED case in LoanTab type and filter logic
+- Added to tabs array with count display
+- Full tracking of loan lifecycle (Pending → Approved/Rejected → Repaid)
+
+### 9. API Response Formatting Fix ✅
+Fixed loan action endpoints to return properly formatted data:
+- Created `formatLoanResponse()` helper function for consistent formatting
+- PUT `/api/loans/[id]` (approve/reject) now returns complete loan data with borrower info
+- POST `/api/loans/[id]` (repayment) now returns formatted loan with updated repayments
+- Fixed undefined errors on loan detail page after actions (no more "Unknown" names)
+- Frontend updated to use API response directly without extra fetch
+
+### 10. Test Data Enhancement ✅
+Added new loan to seed data for rejection testing:
+- Loan 4: Juan dela Cruz - ₱12,000 (Pending approval)
+- Added notification for admin about this loan request
+- Updated seed summary to show 4 loans total
+- Perfect for testing the reject workflow
 
 ---
 
@@ -264,11 +294,12 @@ fetch('/api/groups/GROUP_ID/members')
 - ✅ **Authentication** - Secure Firebase Auth with cookies
 - ✅ **Groups** - Full CRUD with complete configuration
 - ✅ **Members** - Invitations, roles, stats, lazy loading
-- ✅ **Loans** - Request with card-based form, slider, lazy co-maker loading
+- ✅ **Loans** - Request with card-based form, slider, lazy co-maker loading ⭐ **REJECTED TAB ADDED**
 - ✅ **Contributions** - Track and pay with notifications
 - ✅ **Settings** - Configure with toast notifications
 - ✅ **Notifications** - Real-time updates with bell icon
 - ✅ **Toast System** - Non-blocking alerts with auto-dismiss
+- ✅ **Philippine Peso Icons** - All currency symbols show ₱ (appropriate for PH users)
 
 ---
 
@@ -293,7 +324,7 @@ fetch('/api/groups/GROUP_ID/members')
 - **Members**: 4 (Aiu - Admin, Juan, Maria, Pedro)
 - **Total Pool**: ₱48,000
 - **Contributions**: 32 records
-- **Loans**: 3 (1 approved, 1 pending, 1 repaid)
+- **Loans**: 4 (1 active, 2 pending ⭐ **REJECTABLE**, 1 repaid)
 
 ### API Endpoints with Real Data
 ```
@@ -313,5 +344,5 @@ GET  /api/notifications                ✅ Real data
 ---
 
 **Build Status**: ✅ PASSING  
-**Last Validated**: February 2, 2026  
+**Last Validated**: February 3, 2026  
 **Status**: 🎉 **ALL FEATURES COMPLETE!**
