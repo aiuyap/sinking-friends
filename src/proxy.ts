@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   // Exclude public routes from authentication
   const publicPaths = [
     '/',
@@ -18,7 +18,7 @@ export async function middleware(req: NextRequest) {
 
   // Check for Firebase authentication token
   // Note: Full token verification happens in API routes using firebase-admin
-  // Middleware only checks for presence of auth cookie for performance
+  // Proxy only checks for presence of auth cookie for performance
   const token = req.cookies.get('__session')?.value;
 
   if (!token) {
@@ -44,7 +44,7 @@ export async function middleware(req: NextRequest) {
   });
 }
 
-// Specify which routes this middleware should run on
+// Specify which routes this proxy should run on
 export const config = {
   matcher: [
     '/dashboard/:path*', 
