@@ -176,37 +176,34 @@ No interest share at year-end
 
 ### Loan Eligibility Calculation
 
-Your maximum loan amount depends on:
-
-1. **Monthly Contribution**
-   - Your bi-weekly amount × 2
-   - Example: ₱2,000 bi-weekly → ₱4,000 monthly
-
-2. **Average Annual Savings**
-   - (Total contributions ÷ Active months) × 12
-   - Example: ₱52,000 over 6 months → ₱104,000 average annual
+Your maximum loan amount depends on your time in the group:
 
 **Eligibility Rules:**
 
 | Time in Group | Maximum Loan |
 |---------------|---------------|
-| **Less than 6 months** | MIN(Monthly Contribution, 50% of Avg Annual Savings) |
-| **6 months or more** | MAX(Monthly Contribution, 50% of Avg Annual Savings) |
+| **Less than 6 months** | Total contributions made so far |
+| **6 months or more** | 50% of annual savings = Bi-weekly contribution × 24 |
 
 **Examples:**
 
 ```
 Scenario 1: New Member (3 months active)
-- Bi-weekly: ₱2,000 → Monthly: ₱4,000
-- Total contributed: ₱24,000 → Avg annual: ₱96,000
-- 50% of avg annual: ₱48,000
-- MAX LOAN = MIN(₱4,000, ₱48,000) = ₱4,000
+- Bi-weekly: ₱2,000
+- Total contributed: ₱12,000 (6 contributions × ₱2,000)
+- MAX LOAN = ₱12,000 (total contributions)
 
-Scenario 2: Long-term Member (12 months active)
-- Bi-weekly: ₱5,000 → Monthly: ₱10,000
-- Total contributed: ₱260,000 → Avg annual: ₱260,000
-- 50% of avg annual: ₱130,000
-- MAX LOAN = MAX(₱10,000, ₱130,000) = ₱130,000
+Scenario 2: Member (6 months active)
+- Bi-weekly: ₱2,000
+- Annual savings: ₱2,000 × 24 = ₱48,000
+- 50% of annual: ₱24,000
+- MAX LOAN = ₱24,000
+
+Scenario 3: Long-term Member (12 months active)
+- Bi-weekly: ₱5,000
+- Annual savings: ₱5,000 × 24 = ₱120,000
+- 50% of annual: ₱60,000
+- MAX LOAN = ₱60,000
 ```
 
 ### Loan Application Process

@@ -1,7 +1,7 @@
 # Sinking Fund Platform - Implementation Status
 
 **Last Updated**: February 5, 2026 (Current Session)
-**Current Phase**: Phase 7 - Group Creator Contribution Settings ⏳ IN PROGRESS
+**Current Phase**: Phase 8 - Loan Eligibility Rules Update ✅ COMPLETE
 **Build Status**: ✅ PASSING
 
 ## Quick Summary
@@ -21,7 +21,23 @@
 
 ## Recent Improvements (Feb 5, 2026)
 
-### 13. Group Creator Contribution Settings ⏳ IN PROGRESS
+### 14. Loan Eligibility Rules Update ✅ COMPLETE
+Updated loan eligibility calculation to new business rules:
+- **New Rule (< 6 months)**: Total contributions made so far
+- **New Rule (≥ 6 months)**: 50% of annual savings = Bi-weekly contribution × 24
+- **Documentation Updated**:
+  - README.md - Business Rules section
+  - RULES.md - Loan Eligibility section with new examples
+  - AGENTS.md - Added calculator code documentation
+- **Backend Updates**:
+  - Updated `calculateMaxLoanAmount()` in calculators
+  - Updated loan-eligibility API endpoint
+- **Frontend Updates**:
+  - Updated Rules tab in group detail page
+  - Added sample calculation examples
+- **Time Calculation**: Based on join date (joinedAt field)
+
+### 13. Group Creator Contribution Settings ✅ COMPLETE
 Adding creator's personal contribution settings during group creation:
 - **Slider Input**: Bi-weekly contribution amount (₱500 - ₱10,000, step 500)
   - Visual tick marks at 1k, 2.5k, 5k, 7.5k, 10k
@@ -317,6 +333,36 @@ fetch('/api/groups/GROUP_ID/members')
 6. Enter payment amount → Submit
 7. **Expected:** Payment recorded, balance updates
 8. **Expected:** Repayment history shows new entry
+
+### Test 7: Loan Eligibility Rules ✅ NEW
+
+**Test Eligibility Calculation (< 6 months):**
+1. Create/join a group as a new member
+2. Make 3 months of contributions (e.g., ₱2,000 × 6 = ₱12,000)
+3. Check loan eligibility
+4. **Expected:** Maximum loan = ₱12,000 (total contributions)
+5. **Expected:** Calculation method shows "total_contributions"
+
+**Test Eligibility Calculation (≥ 6 months):**
+1. Continue contributing until 6+ months active
+2. Check loan eligibility
+3. **Expected:** Maximum loan = 50% of (bi-weekly × 24)
+4. Example: ₱2,000 bi-weekly → ₱48,000 annual → ₱24,000 max loan
+5. **Expected:** Calculation method shows "annual_savings_percentage"
+
+**Test Rules Tab Display:**
+1. Navigate to a group → Click "Rules" tab
+2. **Expected:** Loan Eligibility card shows new rules:
+   - "< 6 months: Total contributions made so far"
+   - "≥ 6 months: 50% of annual savings (bi-weekly × 24)"
+3. **Expected:** Example calculation visible in card
+
+**Test API Response:**
+1. Call `/api/groups/[id]/loan-eligibility`
+2. **Expected:** Response includes:
+   - `maxLoan` - Correct calculated amount
+   - `breakdown.method` - "total_contributions" or "annual_savings_percentage"
+   - `activeMonths` - Number of months since joinedAt
 
 ### Test 6: Group Creation with Contribution Settings ⏳ NEW
 

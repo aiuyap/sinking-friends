@@ -6,6 +6,7 @@ export interface LoanEligibility {
   breakdown: {
     option1: number
     option2: number
+    method: string
   }
 }
 
@@ -27,9 +28,9 @@ export interface MemberDistribution {
 /**
  * Calculate the maximum loan amount a member can borrow
  * 
- * Rule:
- * - < 6 months active: MIN(monthly_contribution, 50% of avg_annual_savings)
- * - >= 6 months active: MAX(monthly_contribution, 50% of avg_annual_savings)
+ * Rule (Updated February 2026):
+ * - < 6 months active: Total contributions made so far
+ * - >= 6 months active: 50% of annual savings (bi-weekly contribution × 24)
  * 
  * @param member - The group member requesting loan
  * @param group - The group with loan settings
@@ -42,24 +43,31 @@ export function calculateMaxLoanAmount(
   const activeMonths = getMonthsActive(member.joinedAt)
   
   const totalContributions = member.totalContributions || 0
-  const avgAnnualSavings = activeMonths > 0 
-    ? (totalContributions / activeMonths) * 12 
-    : 0
   
-  const option1 = monthlyContribution
-  const option2 = avgAnnualSavings * (group.maxLoanPercent / 100)
+  let maxLoan: number
+  let calculationMethod: string
   
-  // Rule: <6 months = MIN, >=6 months = MAX
-  const maxLoan = activeMonths < 6 
-    ? Math.min(option1, option2) 
-    : Math.max(option1, option2)
+  if (activeMonths < 6) {
+    // Less than 6 months: Total contributions made so far
+    maxLoan = totalContributions
+    calculationMethod = 'total_contributions'
+  } else {
+    // 6 months or more: 50% of annual savings (bi-weekly × 24)
+    const annualSavings = member.biWeeklyContribution * 24
+    maxLoan = annualSavings * (group.maxLoanPercent / 100)
+    calculationMethod = 'annual_savings_percentage'
+  }
   
   return {
     maxLoan,
     monthlyContribution,
-    avgAnnualSavings,
+    avgAnnualSavings: activeMonths < 6 ? 0 : member.biWeeklyContribution * 24,
     activeMonths,
-    breakdown: { option1, option2 }
+    breakdown: { 
+      option1: totalContributions, 
+      option2: activeMonths < 6 ? 0 : member.biWeeklyContribution * 24 * (group.maxLoanPercent / 100),
+      method: calculationMethod
+    }
   }
 }
 

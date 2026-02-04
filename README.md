@@ -70,10 +70,12 @@ A sinking fund (known as "paluwagan" in the Philippines) is a time-tested commun
 
 | Your Time in Group | Maximum Loan Amount |
 |-------------------|-------------------|
-| **Less than 6 months** | Lower of: Monthly Contribution or 50% of your average annual savings |
-| **6 months or more** | Higher of: Monthly Contribution or 50% of your average annual savings |
+| **Less than 6 months** | Total contributions made so far |
+| **6 months or more** | 50% of annual savings (Bi-weekly contribution × 24) |
 
-*Example: Contributing ₱2,000 bi-weekly for 6 months could qualify you for up to ₱48,000*
+*Example: Contributing ₱2,000 bi-weekly*
+- *After 3 months (₱12,000 contributed): Maximum loan = ₱12,000*
+- *After 6 months: Maximum loan = ₱24,000 (50% of annual)*
 
 ### Co-Maker System
 - Required for loans exceeding your monthly contribution

@@ -376,17 +376,25 @@ export default function GroupDetailPage() {
                       <ul className="space-y-2 text-sm text-charcoal-secondary">
                         <li className="flex items-start gap-2">
                           <span className="text-sage">•</span>
-                          <span><strong>New members (&lt; 6 months):</strong> Can borrow minimum of monthly contribution or 50% of average annual savings</span>
+                          <span><strong>New members (&lt; 6 months):</strong> Can borrow total contributions made so far</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-sage">•</span>
-                          <span><strong>Established members (≥ 6 months):</strong> Can borrow maximum of monthly contribution or 50% of average annual savings</span>
+                          <span><strong>Established members (≥ 6 months):</strong> Can borrow 50% of annual savings (bi-weekly × 24)</span>
                         </li>
                         <li className="flex items-start gap-2">
                           <span className="text-sage">•</span>
                           <span>Loans exceeding monthly contribution require a co-maker</span>
                         </li>
                       </ul>
+                      <div className="mt-4 p-3 bg-cream-dim rounded-lg">
+                        <p className="text-xs font-medium text-charcoal mb-1">Example:</p>
+                        <p className="text-xs text-charcoal-secondary">
+                          Contributing ₱2,000 bi-weekly<br/>
+                          • After 3 months: ₱12,000 max loan<br/>
+                          • After 6 months: ₱24,000 max loan (50% of ₱48,000 annual)
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
 

@@ -123,6 +123,30 @@ Required variables (see `.env`):
 - `DATABASE_URL` - PostgreSQL connection string
 - `NEXTAUTH_SECRET` / `NEXTAUTH_URL` - Auth configuration
 
+## Important Business Logic
+
+### Loan Eligibility Calculator (Updated February 2026)
+
+```typescript
+function calculateMaxLoanAmount(member: GroupMember): number {
+  const activeMonths = getMonthsActive(member.joinedAt)
+  
+  if (activeMonths < 6) {
+    // Less than 6 months: Total contributions made so far
+    return member.totalContributions
+  } else {
+    // 6 months or more: 50% of annual savings
+    // Annual = bi-weekly × 24
+    const annualSavings = member.biWeeklyContribution * 24
+    return annualSavings * 0.5
+  }
+}
+```
+
+**Rules:**
+- **< 6 months**: Total contributions made so far
+- **≥ 6 months**: 50% of annual savings (bi-weekly × 24)
+
 ---
 
 Last updated: February 2026
